@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubSplit – Group Splits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+<style>
+html{scroll-behavior:smooth}body{overscroll-behavior:none}
+#ledger,#config{scroll-margin-top:84px}
+.noscroll{scrollbar-width:none}.noscroll::-webkit-scrollbar{display:none}
+:focus-visible{outline:2px solid #5046e5;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+colors:{"surface":"#f8f9ff","surface-dim":"#cbdbf5","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","surface-container":"#e5eeff","surface-container-high":"#dce9ff","surface-container-highest":"#d3e4fe","on-surface":"#0b1c30","on-surface-variant":"#464555","outline":"#777587","outline-variant":"#c7c4d8","primary":"#3625cd","primary-container":"#5046e5","on-primary":"#ffffff","inverse-primary":"#c3c0ff","secondary":"#006c49","secondary-container":"#6cf8bb","on-secondary-container":"#00714d","secondary-fixed":"#6ffbbe","tertiary":"#684000","tertiary-fixed":"#ffddb8","on-tertiary-fixed-variant":"#653e00","error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a","inverse-surface":"#213145","inverse-on-surface":"#eaf1ff"},
+fontFamily:{"headline-xl":["Geist","Inter","sans-serif"],"headline-lg":["Geist","Inter","sans-serif"],"headline-sm":["Geist","Inter","sans-serif"],"body-lg":["Inter","sans-serif"],"body-md":["Inter","sans-serif"],"body-sm":["Inter","sans-serif"],"label-caps":["Inter","sans-serif"],"label-numeric":["JetBrains Mono","monospace"]},
+fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontWeight:"600"}],"headline-lg":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",letterSpacing:"-0.01em"}],"body-md":["14px",{lineHeight:"20px"}],"body-sm":["12px",{lineHeight:"16px"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}],"label-numeric":["13px",{lineHeight:"16px",letterSpacing:"-0.02em",fontWeight:"500"}]}
+}}}
+</script>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+
+<header class="fixed top-0 inset-x-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,.04)]">
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 sm:gap-8 min-w-0">
+      <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
+        <span class="font-headline-sm text-headline-sm font-bold">SubSplit</span>
+        <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
+      </div>
+      <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
+    </div>
+    <div class="flex-1 max-w-md hidden md:block">
+      <label class="relative flex items-center w-full"><span class="sr-only">Search shared bills</span>
+        <span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">search</span>
+        <input data-search type="search" autocomplete="off" placeholder="Search shared bills… (Ctrl/⌘ K)" class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low rounded-lg text-body-sm placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all"></label>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button type="button" data-act="bell" aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span id="bell-count" class="absolute top-1 right-1 hidden h-4 min-w-4 px-1 items-center justify-center rounded-full bg-error text-on-error font-label-numeric text-[10px] font-bold"></span></button>
+      <button type="button" data-act="open-bill" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm"><span class="material-symbols-outlined text-base">add</span>Add subscription</button>
+      <div class="flex items-center gap-2 pl-1">
+        <span class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">AC</span>
+        <div class="hidden lg:flex flex-col leading-none"><span class="text-body-sm font-semibold">Alex Chen</span><span id="hdr-bills" class="font-label-numeric text-[11px] text-outline"></span></div>
+      </div>
+    </div>
+  </div>
+  <div id="nav-m" class="hidden xl:hidden border-t border-surface-container bg-surface-container-lowest px-4 py-2"></div>
+</header>
+
+<main class="w-full pt-16 min-h-screen">
+  <div id="toasts" class="fixed bottom-6 right-4 sm:right-6 z-[70] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div id="pills" class="noscroll flex items-center gap-2 overflow-x-auto py-1 max-w-full" role="group" aria-label="Groups"></div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" data-act="export" title="Download this group's ledger as CSV" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low text-body-sm font-medium shadow-sm"><span class="material-symbols-outlined text-base text-outline">ios_share</span><span class="hidden sm:inline">Export ledger</span></button>
+        <button type="button" data-act="settle-all" id="btn-settle-all" title="Mark every unsettled share as paid" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-secondary hover:bg-secondary-container/20 text-body-sm font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"><span class="material-symbols-outlined text-base">price_check</span>Settle all</button>
+        <button type="button" data-act="open-bill" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm"><span class="material-symbols-outlined text-base">add</span>Add shared bill</button>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2 mb-1 flex-wrap"><span id="cycle" class="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-label-caps text-label-caps uppercase"></span><span class="text-outline text-body-sm" aria-hidden="true">•</span><span id="hid" class="font-label-numeric text-body-sm text-outline"></span></div>
+        <h1 class="font-headline-lg text-headline-lg font-bold">Group splits &amp; shared ledger</h1>
+        <p class="text-body-md text-on-surface-variant max-w-2xl mt-0.5">Track recurring bills, see who owes whom, and settle up.</p>
+      </div>
+      <div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm text-on-surface-variant text-body-sm self-start md:self-auto"><span class="w-2 h-2 rounded-full bg-secondary"></span><span>Saved: <span id="saved" class="font-label-numeric text-on-surface font-medium"></span></span></div>
+    </div>
+
+    <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-8 flex flex-col gap-8">
+        <section id="ledger" class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden" aria-label="Shared ledger">
+          <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div><h2 class="font-headline-sm text-headline-sm font-bold">Shared household ledger</h2><p class="text-body-sm text-on-surface-variant">Recurring bills split between group members</p></div>
+            <div id="tabs" class="flex items-center p-1 bg-surface-container-low rounded-lg text-on-surface-variant text-body-sm self-start" role="group" aria-label="Filter bills"></div>
+          </div>
+          <label class="relative flex items-center md:hidden px-5 pb-3"><span class="sr-only">Search shared bills</span>
+            <span class="material-symbols-outlined absolute left-8 text-outline text-lg pointer-events-none">search</span>
+            <input data-search type="search" placeholder="Search shared bills…" class="w-full pl-9 pr-4 py-2 bg-surface-container-low rounded-lg text-body-sm placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container"></label>
+          <ul id="bills" class="flex flex-col divide-y divide-surface-container-low"></ul>
+        </section>
+        <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col gap-3" aria-label="Activity">
+          <div class="flex items-center justify-between gap-3"><div><h2 class="font-headline-sm text-headline-sm font-bold">Settlement activity</h2><p class="text-body-sm text-on-surface-variant">Payments and reminders in this group</p></div>
+            <button type="button" id="btn-log" data-act="toggle-log" class="text-primary hover:text-primary-container text-body-sm font-semibold flex items-center gap-1 shrink-0"></button></div>
+          <ul id="log" class="flex flex-col gap-2 pt-1"></ul>
+        </section>
+      </div>
+      <aside class="lg:col-span-4 flex flex-col gap-8">
+        <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col gap-3" aria-label="Balances">
+          <div class="flex items-center justify-between"><h2 class="font-headline-sm text-headline-sm font-bold">Member balances</h2><span id="mcount" class="font-label-numeric text-body-sm text-outline"></span></div>
+          <div id="balances" class="flex flex-col gap-3 pt-1"></div>
+        </section>
+        <section id="optim" class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col gap-3" aria-label="Debt simplification"></section>
+        <section id="config" class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col gap-3" aria-label="Payment settings"></section>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Add bill modal -->
+  <div id="dlg-bill" inert aria-hidden="true" class="dlg fixed inset-0 z-[60] bg-inverse-surface/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div role="dialog" aria-modal="true" aria-labelledby="t-bill" class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 space-y-4">
+      <div class="flex items-start justify-between"><div><h2 id="t-bill" class="font-headline-sm text-headline-sm text-lg font-bold">Add shared bill</h2><p class="text-body-sm text-outline">Splits equally between the people you pick</p></div>
+        <button type="button" data-act="close" aria-label="Close" class="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-xl">close</span></button></div>
+      <form id="form-bill" class="space-y-4">
+        <div><label for="b-name" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Bill name</label>
+          <input id="b-name" required maxlength="60" placeholder="e.g. Electricity" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label for="b-cost" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Total cost ($/mo)</label>
+            <input id="b-cost" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="80.00" class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+          <div><label for="b-payer" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Paid by</label>
+            <select id="b-payer" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></select></div>
+        </div>
+        <div><label for="b-date" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Next billing date</label>
+          <input id="b-date" type="date" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+        <fieldset class="p-3 rounded-xl bg-surface-container-low space-y-2">
+          <div class="flex items-center justify-between"><legend class="text-label-caps font-label-caps uppercase text-on-surface-variant float-left">Split between</legend><span id="b-calc" class="text-[11px] font-label-numeric text-primary font-semibold"></span></div>
+          <div id="b-chips" class="flex items-center gap-2 flex-wrap clear-both pt-1"></div>
+        </fieldset>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <button type="button" data-act="close" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-body-sm font-semibold shadow-sm">Save bill</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- New group modal -->
+  <div id="dlg-group" inert aria-hidden="true" class="dlg fixed inset-0 z-[60] bg-inverse-surface/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div role="dialog" aria-modal="true" aria-labelledby="t-group" class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-start justify-between"><h2 id="t-group" class="font-headline-sm text-headline-sm text-lg font-bold">New group</h2>
+        <button type="button" data-act="close" aria-label="Close" class="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-xl">close</span></button></div>
+      <form id="form-group" class="space-y-4">
+        <div><label for="g-name" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Group name</label>
+          <input id="g-name" required maxlength="40" placeholder="e.g. Weekend trip" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+        <div><label for="g-members" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Other members</label>
+          <input id="g-members" required placeholder="Priya, Sam, Jo" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"><p class="text-[11px] text-outline mt-1">Separate names with commas. You are added automatically.</p></div>
+        <div class="flex justify-end gap-2.5">
+          <button type="button" data-act="close" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-body-sm font-semibold shadow-sm">Create group</button></div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
+    <div>© <span id="yr"></span> SubSplit Technologies Inc. All rights reserved.</div>
+    <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const ME = 'Alex', KEY = 'subsplit.groups.v1', DAY = 864e5;
+const TONES = ['bg-primary-container/15 text-primary','bg-secondary-container text-on-secondary-container','bg-tertiary-fixed text-on-tertiary-fixed-variant','bg-error-container text-on-error-container','bg-surface-container-high text-on-surface-variant'];
+const BARS = ['bg-primary-container','bg-secondary','bg-tertiary','bg-outline','bg-surface-dim'];
+
+// ---------- helpers ----------
+const r2 = n => Math.round(n * 100) / 100, money = n => '$' + r2(n).toFixed(2), sum = a => a.reduce((x, y) => x + y, 0);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso = d => d.toLocaleDateString('sv');
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const plus = n => { const d = today(); d.setDate(d.getDate() + n); return iso(d); };
+const parse = s => new Date(s + 'T00:00');
+const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+const inDays = d => Math.round((d - today()) / DAY);
+const when = n => n <= 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const ini = n => esc(n.slice(0, 2).toUpperCase());
+function ago(ts) {
+  const d = new Date(ts), t = new Date(), m = Math.round((t - d) / 6e4), tm = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  if (m < 1) return 'Just now'; if (m < 60) return `${m} min ago`;
+  if (d.toDateString() === t.toDateString()) return `Today at ${tm}`;
+  if (new Date(t - DAY).toDateString() === d.toDateString()) return `Yesterday at ${tm}`;
+  return `${fmtDate(d)} at ${tm}`;
+}
+
+// ---------- data (sample data; replace with your API) ----------
+const seed = () => { const now = Date.now(); return {active:'g1', updated:now, settings:{venmo:'@alexchen-split', zelle:'alex@chen.me', auto:true}, groups:[
+  {id:'g1', name:'Apt 4B Roommates', hid:'#SUB-4B-902', members:['Alex','Sarah','David','Marcus'], subs:[
+    {id:'netflix', name:'Netflix 4K Premium', icon:'movie', tone:'bg-error/10 text-error', cost:22.99, payer:'Alex', date:plus(4), m:{Alex:0, Sarah:2, David:0, Marcus:0}},
+    {id:'spotify', name:'Spotify Family Plan', icon:'music_note', tone:'bg-secondary/10 text-secondary', cost:16.99, payer:'Alex', date:plus(12), m:{Alex:0, David:0, Marcus:0}},
+    {id:'wifi', name:'Sonic Fiber Gigabit Wi-Fi', icon:'router', tone:'bg-primary/10 text-primary', cost:80, payer:'David', date:plus(7), m:{Alex:0, Sarah:0, David:0, Marcus:0}},
+    {id:'adobe', name:'Adobe Creative Cloud All Apps', icon:'palette', tone:'bg-error-container text-error', cost:54.99, payer:'Marcus', date:plus(22), m:{Alex:0, Marcus:0}},
+    {id:'google', name:'Google One Cloud 2TB', icon:'cloud', tone:'bg-surface-container-high text-primary', cost:9.99, payer:'Alex', date:plus(18), m:{Alex:0, David:0}}],
+   log:[{k:'paid', a:'Marcus', v:'settled with', b:'Alex', d:'Spotify share · Feb–Mar', amt:'+$5.66', tag:'Venmo', ts:now - DAY + 3e5},
+        {k:'swap', a:'David', v:'auto-cleared with', b:'Alex', d:'Wi-Fi offset against Google One', amt:'$15.01 net', tag:'In-app balance', ts:now - 2 * DAY},
+        {k:'ping', a:'Reminder sent', v:'to', b:'Sarah', d:'Netflix share overdue', amt:'$11.50 pending', tag:'Push & SMS', ts:now - 5 * DAY}]},
+  {id:'g2', name:'Family Plan', hid:'#SUB-FP-114', members:['Alex','Mom','Dad'], subs:[], log:[]},
+  {id:'g3', name:'Design Studio Co-op', hid:'#SUB-DS-207', members:['Alex','Priya'], subs:[], log:[]}]}; };
+let data; try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
+if (!data || !Array.isArray(data.groups)) data = seed();
+const save = () => { data.updated = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} };
+const G = () => data.groups.find(g => g.id === data.active) || data.groups[0];
+const share = s => s.cost / Object.keys(s.m).length;
+const owingOf = s => Object.entries(s.m).filter(([n, v]) => n !== s.payer && v > 0);
+const debts = g => g.subs.flatMap(s => owingOf(s).map(([from, mo]) => ({s, from, to: s.payer, amt: share(s) * mo})));
+function simplify(bal) {
+  const c = [], d = [];
+  for (const [n, v] of Object.entries(bal)) { const x = r2(v); if (x > 0) c.push([n, x]); else if (x < 0) d.push([n, -x]); }
+  c.sort((a, b) => b[1] - a[1]); d.sort((a, b) => b[1] - a[1]);
+  const out = []; let i = 0, j = 0;
+  while (i < c.length && j < d.length) { const x = Math.min(c[i][1], d[j][1]); out.push({from:d[j][0], to:c[i][0], amt:x}); c[i][1] = r2(c[i][1] - x); d[j][1] = r2(d[j][1] - x); if (!c[i][1]) i++; if (!d[j][1]) j++; }
+  return out;
+}
+const log = (g, e) => { g.log.unshift({...e, ts: Date.now()}); g.log.length = Math.min(g.log.length, 30); };
+
+let tab = 'all', q = '', showAll = false, bill = new Set(), lastFocus = null;
+
+// ---------- toast / clipboard ----------
+function toast(msg, icon = 'check_circle') {
+  const t = document.createElement('div');
+  t.className = 'pointer-events-auto bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs transition-all duration-300 translate-y-4 opacity-0';
+  t.innerHTML = `<span class="material-symbols-outlined text-sm text-secondary-fixed">${icon}</span><span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.remove('translate-y-4', 'opacity-0'));
+  setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => t.remove(), 300); }, 3200);
+}
+async function copy(text, ok) {
+  let done = false;
+  try { await navigator.clipboard.writeText(text); done = true; } catch {
+    const a = document.createElement('textarea'); a.value = text; a.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(a); a.select(); try { done = document.execCommand('copy'); } catch {} a.remove();
+  }
+  done ? toast(ok) : toast('Copy failed. Your browser blocked clipboard access.', 'error');
+}
+
+// ---------- render ----------
+function billHTML(g, s) {
+  const sh = share(s), n = Object.keys(s.m).length, ow = owingOf(s), mine = ME in s.m, d = parse(s.date);
+  const dd = (() => { const x = new Date(d); while (x < today()) x.setMonth(x.getMonth() + 1); return x; })();
+  const others = Object.keys(s.m).filter(x => x !== s.payer), settledN = others.length - ow.length;
+  const meOwes = s.payer !== ME && s.m[ME] > 0;
+  let right;
+  if (s.payer === ME) right = `<span class="font-label-numeric text-body-md font-bold text-secondary">+${money(sh * settledN)} collected</span>` + (ow.length ? `<span class="text-error text-xs font-medium">${plural(ow.length, 'unsettled share')}</span>` : `<span class="px-2 rounded bg-secondary-container/40 text-on-secondary-container font-label-caps text-[10px] uppercase font-bold">100% settled</span>`);
+  else right = `<span class="font-label-numeric text-body-md font-bold">${mine ? '-' + money(sh) + ' your share' : 'Not in this split'}</span>` + (mine ? (meOwes ? `<span class="text-error text-xs font-semibold">You owe ${esc(s.payer)}</span>` : `<span class="text-secondary text-xs font-semibold flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">check_circle</span>Settled</span>`) : '');
+  const note = ow.length ? `<span class="text-tertiary font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>${esc(ow.map(x => x[0]).join(', '))} pending</span>` : `<span>Next bill ${fmtDate(dd)}</span>`;
+  return `<li class="p-5 hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex items-start sm:items-center gap-3 min-w-0"><div class="w-11 h-11 rounded-xl ${s.tone || 'bg-surface-container-high text-primary'} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-2xl">${s.icon || 'receipt_long'}</span></div>
+      <div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h3 class="font-body-lg text-body-lg font-semibold truncate">${esc(s.name)}</h3><span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase">${esc(s.payer)} pays</span></div>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5"><span class="font-label-numeric text-on-surface font-semibold">${money(s.cost)}/mo</span><span aria-hidden="true">•</span><span>${n}-way split (${money(sh)}/ea)</span><span aria-hidden="true">•</span>${note}</div></div></div>
+    <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0"><div class="flex flex-col items-start sm:items-end">${right}</div>
+      <div class="flex items-center gap-1">${s.payer === ME && ow.length ? `<button type="button" data-act="ping" data-id="${s.id}" aria-label="Copy reminder for ${esc(s.name)}" title="Copy reminder" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><span class="material-symbols-outlined text-lg">notifications_active</span></button>` : ''}
+      <button type="button" data-act="remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}" title="Remove bill" class="p-1.5 text-outline hover:text-error hover:bg-error-container/50 rounded-lg"><span class="material-symbols-outlined text-lg">delete</span></button></div></div></li>`;
+}
+
+function render() {
+  const g = G(), subs = g.subs, mem = g.members, now = new Date();
+  const dl = debts(g), bal = Object.fromEntries(mem.map(m => [m, 0]));
+  dl.forEach(x => { bal[x.to] += x.amt; bal[x.from] -= x.amt; });
+  const net = r2(bal[ME] || 0), pool = sum(subs.map(s => s.cost));
+  const yours = sum(subs.filter(s => ME in s.m).map(share));
+  const pairs = sum(subs.map(s => Object.keys(s.m).length - (s.payer in s.m ? 1 : 0))), unsettled = dl.length;
+  const pct = pairs ? Math.round((pairs - unsettled) / pairs * 100) : 100;
+  const upcoming = subs.map(s => { const d = parse(s.date); while (d < today()) d.setMonth(d.getMonth() + 1); return {s, d}; }).sort((a, b) => a.d - b.d)[0];
+  const perMember = mem.map(m => sum(subs.filter(s => m in s.m).map(share)));
+  const simple = simplify(bal);
+
+  // header / titles
+  $('#cycle').textContent = `Recurring cycle: ${now.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+  $('#hid').textContent = `Group ID: ${g.hid}`;
+  $('#saved').textContent = ago(data.updated);
+  $('#hdr-bills').textContent = plural(subs.length, 'shared bill');
+  $('#mcount').textContent = plural(mem.length, 'member');
+  $('#btn-settle-all').disabled = !dl.length;
+  const alerts = unsettled; $('#bell-count').textContent = alerts; $('#bell-count').classList.toggle('hidden', !alerts); $('#bell-count').classList.toggle('flex', !!alerts);
+  $('#yr').textContent = now.getFullYear();
+
+  // nav
+  const nav = [['Dashboard', 'subsplit-dashboard.html'], ['Group Splits', '#'], ['Analytics', 'subsplit-dashboard.html#analytics'], ['Settings', '#config']];
+  const navHTML = nav.map(([l, h]) => `<a href="${h}" ${l === 'Group Splits' ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Group Splits' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
+  $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
+
+  // group pills
+  $('#pills').innerHTML = data.groups.map(x => x.id === g.id
+    ? `<button type="button" data-act="group" data-id="${x.id}" aria-pressed="true" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-surface-container-lowest shadow-sm text-body-sm font-semibold whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-primary-container"></span>${esc(x.name)}<span class="flex items-center -space-x-1.5 ml-1">${x.members.slice(0, 3).map((m, i) => `<span class="w-5 h-5 rounded-full ${TONES[i]} text-[8px] font-bold flex items-center justify-center shadow-[0_0_0_2px_#fff]">${ini(m)}</span>`).join('')}${x.members.length > 3 ? `<span class="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant font-label-numeric text-[9px] flex items-center justify-center font-bold shadow-[0_0_0_2px_#fff]">+${x.members.length - 3}</span>` : ''}</span></button>`
+    : `<button type="button" data-act="group" data-id="${x.id}" aria-pressed="false" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-body-sm font-medium whitespace-nowrap">${esc(x.name)}<span class="px-1.5 rounded-md bg-surface-container-high font-label-numeric text-[10px]">${x.members.length}</span></button>`).join('')
+    + `<button type="button" data-act="open-group" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-surface-container-lowest text-primary text-body-sm font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-base">add</span>New group</button>`;
+
+  // stat cards
+  const netCls = net > 0 ? 'text-secondary-fixed' : net < 0 ? 'text-error-container' : 'text-white';
+  $('#cards').innerHTML = `
+  <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between gap-3">
+    <div class="flex items-start justify-between"><div><span class="font-label-caps text-label-caps uppercase text-outline block">Total monthly group pool</span><div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl font-bold">${money(pool)}</span><span class="text-body-sm text-on-surface-variant font-medium">/month</span></div></div>
+    <div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary"><span class="material-symbols-outlined text-2xl">account_balance</span></div></div>
+    <div class="flex flex-col gap-2"><div class="flex items-center justify-between gap-2 text-body-sm"><span class="text-on-surface-variant">${plural(subs.length, 'recurring item')}</span><span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-numeric text-xs font-semibold">Your share: ${money(yours)}/mo</span></div>
+    <div class="w-full h-1.5 bg-surface-container-low rounded-full overflow-hidden flex" role="img" aria-label="Share of pool by member">${pool ? mem.map((m, i) => `<div class="h-full ${BARS[i % 5]}" style="width:${perMember[i] / pool * 100}%" title="${esc(m)} (${Math.round(perMember[i] / pool * 100)}%)"></div>`).join('') : ''}</div></div></div>
+  <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-5 shadow-md flex flex-col justify-between gap-3 relative overflow-hidden">
+    <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="flex items-start justify-between relative"><div><span class="font-label-caps text-label-caps uppercase text-inverse-primary block">Your net balance</span><div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl font-bold ${netCls}">${net > 0 ? '+' : net < 0 ? '-' : ''}${money(Math.abs(net))}</span><span class="text-body-sm text-surface-container-highest">${net > 0 ? 'Owed to you' : net < 0 ? 'You owe' : 'All square'}</span></div></div>
+    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-secondary-fixed"><span class="material-symbols-outlined text-2xl">${net < 0 ? 'trending_down' : 'trending_up'}</span></div></div>
+    <div class="flex items-center justify-between relative gap-2"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${unsettled ? 'bg-error-container' : 'bg-secondary-fixed'}"></span><span class="text-body-sm text-inverse-on-surface/90">${unsettled ? plural(unsettled, 'share') + ' pending' : 'Nothing pending'}</span></div>
+    <button type="button" data-act="remind" ${dl.some(x => x.to === ME) ? '' : 'disabled'} class="px-2.5 py-1 rounded-lg bg-primary-container hover:bg-primary text-on-primary text-xs font-semibold shadow-sm flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"><span class="material-symbols-outlined text-sm">content_copy</span>Copy reminder</button></div></div>
+  <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between gap-3">
+    <div class="flex items-start justify-between"><div><span class="font-label-caps text-label-caps uppercase text-outline block">Settlement health</span><div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl font-bold">${pct}%</span><span class="text-body-sm text-secondary font-medium">Settled</span></div></div>
+    <div class="relative w-12 h-12 flex items-center justify-center" role="img" aria-label="${pct}% settled"><svg class="w-12 h-12 -rotate-90" viewBox="0 0 36 36"><path class="text-surface-container-high" d="M18 2.0845a15.9155 15.9155 0 0 1 0 31.831a15.9155 15.9155 0 0 1 0-31.831" fill="none" stroke="currentColor" stroke-width="3.5"/><path class="text-secondary" d="M18 2.0845a15.9155 15.9155 0 0 1 0 31.831a15.9155 15.9155 0 0 1 0-31.831" fill="none" stroke="currentColor" stroke-dasharray="${pct}, 100" stroke-linecap="round" stroke-width="3.5"/></svg></div></div>
+    <div class="flex items-center justify-between gap-2 text-body-sm">${upcoming ? `<div class="flex items-center gap-1.5 text-on-surface-variant min-w-0"><span class="material-symbols-outlined text-base text-tertiary">schedule</span><span class="truncate">${esc(upcoming.s.name.split(' ')[0])} bills <strong class="text-on-surface font-semibold">${when(inDays(upcoming.d))}</strong></span></div><span class="text-outline font-label-numeric text-xs shrink-0">${fmtDate(upcoming.d)}</span>` : '<span class="text-on-surface-variant">No bills yet</span>'}</div></div>`;
+
+  // ledger
+  const youPay = subs.filter(s => s.payer === ME).length;
+  $('#tabs').innerHTML = [['all', 'All', subs.length], ['you', 'You pay', youPay], ['others', 'Others pay', subs.length - youPay]].map(([id, l, c]) => `<button type="button" data-act="tab" data-tab="${id}" aria-pressed="${tab === id}" class="px-3 py-1 rounded-md transition-all whitespace-nowrap ${tab === id ? 'bg-surface-container-lowest font-semibold text-primary shadow-sm' : 'hover:text-on-surface'}">${l} (${c})</button>`).join('');
+  const term = q.trim().toLowerCase();
+  const rows = subs.filter(s => (tab === 'all' || (tab === 'you') === (s.payer === ME)) && (!term || s.name.toLowerCase().includes(term)));
+  $('#bills').innerHTML = rows.map(s => billHTML(g, s)).join('') || `<li class="p-8 text-center text-sm text-on-surface-variant">${subs.length ? 'No bills match these filters.' : 'No shared bills yet. Use “Add shared bill” to start this ledger.'}</li>`;
+
+  // log
+  const entries = showAll ? g.log : g.log.slice(0, 3);
+  $('#btn-log').innerHTML = g.log.length > 3 ? `${showAll ? 'Show less' : 'View full log'}<span class="material-symbols-outlined text-sm">${showAll ? 'expand_less' : 'arrow_forward'}</span>` : '';
+  const K = {paid:['payments', 'bg-secondary-container text-on-secondary-container', 'text-secondary'], swap:['swap_horiz', 'bg-surface-container-high text-primary', 'text-on-surface'], ping:['forward_to_inbox', 'bg-error-container text-error', 'text-tertiary']};
+  $('#log').innerHTML = entries.map(e => { const k = K[e.k] || K.swap; return `<li class="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low"><div class="flex items-center gap-3 min-w-0"><div class="w-8 h-8 rounded-full ${k[1]} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-base">${k[0]}</span></div><div class="min-w-0"><div class="flex items-center gap-1.5 flex-wrap text-body-sm"><span class="text-on-surface font-semibold">${esc(e.a)}</span><span class="text-outline text-xs">${esc(e.v)}</span><span class="text-on-surface font-medium">${esc(e.b)}</span></div><div class="text-outline font-label-numeric text-xs">${esc(e.d)} • ${ago(e.ts)}</div></div></div><div class="flex items-center gap-2 shrink-0 text-right"><span class="font-label-numeric text-body-sm font-bold ${k[2]}">${esc(e.amt)}</span><span class="hidden sm:inline px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-caps text-[10px]">${esc(e.tag)}</span></div></li>`; }).join('') || '<li class="text-sm text-on-surface-variant py-2">No activity yet.</li>';
+
+  // balances
+  $('#balances').innerHTML = mem.filter(m => m !== ME).map(m => {
+    const i = mem.indexOf(m), b = r2(-(bal[m] || 0)); // positive = owes you (pairwise below)
+    const owesMe = r2(sum(dl.filter(x => x.from === m && x.to === ME).map(x => x.amt))), iOwe = r2(sum(dl.filter(x => x.from === ME && x.to === m).map(x => x.amt)));
+    const av = `<div class="w-9 h-9 rounded-full ${TONES[i % 5]} flex items-center justify-center font-bold text-xs shrink-0">${ini(m)}</div>`;
+    if (!owesMe && !iOwe) return `<div class="p-3.5 rounded-xl bg-surface-container-low/60 flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0">${av}<div class="min-w-0"><span class="text-body-sm font-semibold block leading-tight truncate">${esc(m)}</span><span class="text-outline font-label-numeric text-xs">${plural(subs.filter(s => m in s.m).length, 'shared bill')}</span></div></div><div class="text-right"><span class="font-label-numeric text-body-md font-bold text-secondary block leading-none">$0.00</span><span class="font-label-caps text-[10px] text-secondary font-bold uppercase">All square</span></div></div>`;
+    const out = owesMe > 0;
+    return `<div class="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-3"><div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0">${av}<span class="text-body-sm font-bold truncate">${esc(m)}</span></div><div class="text-right"><span class="font-label-numeric text-headline-sm font-bold ${out ? 'text-secondary' : 'text-error'} block leading-none">${out ? '+' + money(owesMe) : '-' + money(iOwe)}</span><span class="font-label-caps text-[10px] ${out ? 'text-secondary' : 'text-error'} font-semibold uppercase">${out ? 'Owes you' : 'You owe'}</span></div></div>
+      <div class="flex items-center gap-2">${out ? `<button type="button" data-act="nudge" data-m="${esc(m)}" class="flex-1 py-1.5 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary text-xs font-semibold flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-sm">chat_bubble</span>Copy payment request</button>` : ''}<button type="button" data-act="mark" data-m="${esc(m)}" class="${out ? '' : 'flex-1 '}py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold">${out ? 'Mark paid' : 'I paid ' + esc(m)}</button></div></div>`;
+  }).join('') || '<p class="text-sm text-on-surface-variant">No other members.</p>';
+
+  // optimizer
+  const t0 = simple[0];
+  $('#optim').innerHTML = `<div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-xl">auto_fix_high</span><h2 class="font-headline-sm text-headline-sm font-bold">Debt simplification</h2></div></div>
+    <p class="text-body-sm text-on-surface-variant">Nets out what members owe each other so you make as few transfers as possible.</p>
+    <div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col gap-3"><div class="flex items-center justify-between gap-2 text-body-sm"><span class="text-outline">Transfers needed:</span><span class="font-label-numeric text-secondary font-bold text-right">${!dl.length ? 'None' : dl.length === simple.length ? `${simple.length} (already minimal)` : `${dl.length} reduced to ${simple.length}`}</span></div>
+    ${t0 ? `<div class="flex items-center justify-between gap-2 py-2"><div class="flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center font-bold text-xs">${ini(t0.from)}</div><span class="text-[10px] text-on-surface-variant mt-1">${esc(t0.from === ME ? 'You' : t0.from)}</span></div>
+    <div class="flex-1 flex flex-col items-center gap-1"><span class="font-label-numeric text-xs font-bold text-primary">${money(t0.amt)}</span><div class="w-full flex items-center"><div class="h-0.5 w-full bg-primary-container rounded"></div><span class="material-symbols-outlined text-primary -ml-2 text-sm">arrow_forward</span></div></div>
+    <div class="flex flex-col items-center"><div class="w-8 h-8 rounded-full bg-primary-container text-on-primary shadow-sm flex items-center justify-center font-bold text-xs">${ini(t0.to)}</div><span class="text-[10px] text-on-surface-variant mt-1">${esc(t0.to === ME ? 'You' : t0.to)}</span></div></div>
+    ${simple.length > 1 ? `<ul class="text-[11px] text-on-surface-variant space-y-1 bg-surface-container-lowest/80 p-2 rounded">${simple.slice(1, 4).map(x => `<li>${esc(x.from)} pays ${esc(x.to)} ${money(x.amt)}</li>`).join('')}</ul>` : ''}` : `<p class="text-[11px] text-outline text-center bg-surface-container-lowest/80 p-2 rounded">Everyone is square. Nothing to transfer.</p>`}</div>`;
+
+  // config
+  const st = data.settings;
+  $('#config').innerHTML = `<h2 class="font-headline-sm text-headline-sm font-bold">Payment settings</h2><div class="flex flex-col gap-2 text-body-sm">
+    <button type="button" data-act="edit" data-f="venmo" class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-left"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-primary">account_circle</span><span class="font-medium">Your Venmo handle</span></span><span class="font-label-numeric text-xs font-semibold text-primary truncate">${esc(st.venmo)}</span></button>
+    <button type="button" data-act="edit" data-f="zelle" class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-left"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-secondary">verified_user</span><span class="font-medium">Zelle email</span></span><span class="font-label-numeric text-xs font-semibold text-secondary truncate">${esc(st.zelle)}</span></button>
+    <label class="flex items-center justify-between gap-3 pt-2 cursor-pointer"><span><span class="font-semibold block leading-snug">Due-soon alerts</span><span class="text-xs text-on-surface-variant">Warn me on load when a bill with unpaid shares is due within 2 days</span></span>
+    <span class="relative inline-flex items-center shrink-0"><input id="auto" type="checkbox" class="sr-only peer" ${st.auto ? 'checked' : ''}><span class="block w-9 h-5 bg-surface-container-highest rounded-full peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span></span></label></div>`;
+}
+
+// ---------- dialogs ----------
+function openDlg(id) { lastFocus = document.activeElement; const d = $(id); d.inert = false; d.setAttribute('aria-hidden', 'false'); d.classList.remove('opacity-0', 'pointer-events-none'); setTimeout(() => d.querySelector('input,select').focus(), 50); }
+function closeDlg() { $$('.dlg').forEach(d => { if (!d.inert) { d.inert = true; d.setAttribute('aria-hidden', 'true'); d.classList.add('opacity-0', 'pointer-events-none'); } }); lastFocus && lastFocus.focus && lastFocus.focus(); }
+function billCalc() { const v = parseFloat($('#b-cost').value) || 0, n = bill.size; $('#b-calc').textContent = n ? `${n} ${n === 1 ? 'person' : 'people'}: ${money(v / n)} each` : 'Pick at least one person'; }
+function billChips() { $('#b-chips').innerHTML = G().members.map(m => `<button type="button" data-act="chip" data-m="${esc(m)}" aria-pressed="${bill.has(m)}" class="px-2.5 py-1 rounded-full text-xs font-medium ${bill.has(m) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container'}">${bill.has(m) ? '✓' : '+'} ${esc(m)}</button>`).join(''); billCalc(); }
+function openBill() {
+  const g = G(); $('#form-bill').reset(); bill = new Set(g.members);
+  $('#b-payer').innerHTML = g.members.map(m => `<option value="${esc(m)}">${esc(m)}${m === ME ? ' (you)' : ''}</option>`).join('');
+  $('#b-date').value = plus(30); $('#b-date').min = plus(0); billChips(); openDlg('#dlg-bill');
+}
+$('#form-bill').addEventListener('submit', e => {
+  e.preventDefault(); const g = G(), name = $('#b-name').value.trim(), cost = parseFloat($('#b-cost').value);
+  if (!name || !(cost > 0)) return; if (!bill.size) return toast('Pick at least one person to split with.', 'error');
+  g.subs.push({id: Date.now().toString(36), name, cost, payer: $('#b-payer').value, date: $('#b-date').value, m: Object.fromEntries([...bill].map(n => [n, 0]))});
+  save(); closeDlg(); tab = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = ''); render(); toast(`Added "${name}"`);
+});
+$('#b-cost').addEventListener('input', billCalc);
+$('#form-group').addEventListener('submit', e => {
+  e.preventDefault(); const name = $('#g-name').value.trim();
+  const others = [...new Set($('#g-members').value.split(',').map(x => x.trim()).filter(x => x && x.toLowerCase() !== ME.toLowerCase()))].slice(0, 7);
+  if (!name || !others.length) return toast('Add a name and at least one other member.', 'error');
+  const g = {id: 'g' + Date.now().toString(36), name, hid: '#SUB-' + Math.random().toString(36).slice(2, 6).toUpperCase(), members: [ME, ...others], subs: [], log: []};
+  data.groups.push(g); data.active = g.id; save(); closeDlg(); $('#form-group').reset(); render(); toast(`Created "${name}"`);
+});
+
+// ---------- actions ----------
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) { if (e.target.classList && e.target.classList.contains('dlg')) closeDlg(); return; }
+  const g = G(), act = el.dataset.act, id = el.dataset.id, m = el.dataset.m, s = g.subs.find(x => x.id === id), dl = debts(g);
+  if (act === 'menu' || act === 'bell') e.preventDefault();
+  switch (act) {
+    case 'open-bill': openBill(); break;
+    case 'open-group': $('#form-group').reset(); openDlg('#dlg-group'); break;
+    case 'close': closeDlg(); break;
+    case 'menu': { const n = $('#nav-m'); n.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !n.classList.contains('hidden')); break; }
+    case 'bell': toast(dl.length ? `${plural(dl.length, 'unsettled share')} in ${g.name}` : 'Everything is settled up', 'notifications'); break;
+    case 'group': data.active = id; tab = 'all'; q = ''; showAll = false; $$('[data-search]').forEach(i => i.value = ''); save(); render(); break;
+    case 'tab': tab = el.dataset.tab; render(); break;
+    case 'toggle-log': showAll = !showAll; render(); break;
+    case 'chip': bill.has(m) ? bill.delete(m) : bill.add(m); billChips(); break;
+    case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) { g.subs = g.subs.filter(x => x !== s); save(); render(); toast(`Removed "${s.name}"`, 'delete'); } break;
+    case 'ping': if (s) { const o = owingOf(s); copy(`Hi ${o.map(x => x[0]).join(' & ')}, your ${money(share(s))} share for ${s.name} is due. Pay ${data.settings.venmo} on Venmo or ${data.settings.zelle} on Zelle.`, 'Reminder copied. Paste it in your group chat.'); log(g, {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'}); save(); render(); } break;
+    case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SubSplit reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + `\nPay: ${data.settings.venmo} (Venmo) or ${data.settings.zelle} (Zelle)`, 'Reminder copied. Paste it in your group chat.'); break; }
+    case 'nudge': { const mine = dl.filter(x => x.from === m && x.to === ME); copy(`Hey ${m}, you owe ${money(sum(mine.map(x => x.amt)))} (${mine.map(x => x.s.name).join(', ')}). Pay ${data.settings.venmo} on Venmo or ${data.settings.zelle} on Zelle.`, `Payment request for ${m} copied`); break; }
+    case 'mark': {
+      let from = m, to = ME, hit = dl.filter(x => x.from === m && x.to === ME);
+      if (!hit.length) { hit = dl.filter(x => x.from === ME && x.to === m); from = ME; to = m; }
+      const total = sum(hit.map(x => x.amt)); hit.forEach(x => { x.s.m[from] = 0; });
+      log(g, {k:'paid', a:from, v:'settled with', b:to, d:[...new Set(hit.map(x => x.s.name))].join(', '), amt:(from === m ? '+' : '-') + money(total), tag:'Manual'});
+      save(); render(); toast(`Marked ${money(total)} as paid`); break; }
+    case 'settle-all': if (dl.length && confirm(`Mark all ${plural(dl.length, 'unsettled share')} (${money(sum(dl.map(x => x.amt)))}) as paid?`)) { const t = sum(dl.map(x => x.amt)); dl.forEach(x => { x.s.m[x.from] = 0; }); log(g, {k:'swap', a:'Everyone', v:'settled up in', b:g.name, d:'All outstanding shares', amt:money(t), tag:'Settle all'}); save(); render(); toast('All balances settled'); } break;
+    case 'edit': { const f = el.dataset.f, v = prompt(f === 'venmo' ? 'Your Venmo handle' : 'Your Zelle email', data.settings[f]); if (v && v.trim()) { data.settings[f] = v.trim().slice(0, 60); save(); render(); } break; }
+    case 'export': {
+      const rows = [['Bill', 'Total', 'Paid by', 'Member', 'Share', 'Months unpaid']];
+      g.subs.forEach(x => Object.entries(x.m).forEach(([n, mo]) => rows.push([x.name, x.cost.toFixed(2), x.payer, n, share(x).toFixed(2), n === x.payer ? 0 : mo])));
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = `${g.name.replace(/\W+/g, '-').toLowerCase()}-ledger.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Ledger downloaded', 'download'); break; }
+  }
+});
+document.addEventListener('change', e => { if (e.target.id === 'auto') { data.settings.auto = e.target.checked; save(); } });
+$$('[data-search]').forEach(inp => inp.addEventListener('input', () => { q = inp.value; $$('[data-search]').forEach(o => o.value = q); render(); }));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDlg();
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); const i = $$('[data-search]').find(x => x.offsetParent); i && i.focus(); }
+});
+
+// ---------- init ----------
+render();
+if (data.settings.auto) {
+  const g = G(), soon = g.subs.find(s => owingOf(s).length && inDays(parse(s.date)) <= 2 && inDays(parse(s.date)) >= 0);
+  if (soon) toast(`${soon.name} bills ${when(inDays(parse(soon.date)))} with ${plural(owingOf(soon).length, 'unpaid share')}`, 'schedule');
+}
+})();
+</script>
+</body>
+</html>

@@ -337,7 +337,7 @@ function render() {
     <button type="button" data-act="dismiss" aria-label="Dismiss banner" class="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-lg">close</span></button></div></div></div>` : '';
 
   // nav
-  const navHTML = NAV.map(([id, label]) => `<a href="#" data-act="nav" data-page="${id}" ${id === page ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${id === page ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${label}</a>`).join('');
+  const navHTML = NAV.map(([id, label]) => `<a href="${id === 'group-splits' ? 'groupsplits.html' : '#'}" data-act="nav" data-page="${id}" ${id === page ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${id === page ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${label}</a>`).join('');
   $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
 
   // tabs
@@ -406,7 +406,7 @@ document.addEventListener('click', e => {
     const act = el.dataset.act, id = el.dataset.id, name = el.dataset.m, s = subs.find(x => x.id === (id || sel));
     const unpaid = [];
     subs.forEach(x => Object.entries(x.members).forEach(([m, p]) => { if (!p) unpaid.push({x, m}); }));
-    if (act === 'nav' || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
+    if ((act === 'nav' && el.dataset.page !== 'group-splits') || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
     switch (act) {
       case 'open': openModal(); break;
       case 'close': closeModal(); break;

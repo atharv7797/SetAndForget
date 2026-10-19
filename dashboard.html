@@ -31,7 +31,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
       <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
       <div class="flex items-center gap-2.5">
         <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
-        <span class="font-headline-sm text-headline-sm font-bold">SubSplit</span>
+        <span class="font-headline-sm text-headline-sm font-bold">SetAndForget</span>
         <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
       </div>
       <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
@@ -59,7 +59,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 </header>
 
 <main class="w-full pt-16 min-h-screen">
-  <h1 class="sr-only">SubSplit dashboard</h1>
+  <h1 class="sr-only">SetAndForget dashboard</h1>
   <div id="toasts" class="fixed bottom-6 right-4 sm:right-6 z-[70] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
   <div id="banner"></div>
 
@@ -183,7 +183,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 
 <footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
   <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
-    <div>© <span id="yr"></span> SubSplit Technologies Inc. All rights reserved.</div>
+    <div>© <span id="yr"></span> SetAndForget Technologies Inc. All rights reserved.</div>
     <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
   </div>
 </footer>
@@ -191,7 +191,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 <script>
 (() => {
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const PAY_LINK = 'https://venmo.com/u/AlexChenSubSplit', KEY = 'subsplit.v2';
+const PAY_LINK = 'https://venmo.com/u/AlexChenSetAndForget', KEY = 'SetAndForget.v2';
 const ROOMMATES = ['Marcus', 'Sarah', 'David'];
 const CATS = {Streaming:['Streaming','bg-secondary'], Software:['Software & Productivity','bg-primary'], 'AI Tools':['AI Tools','bg-tertiary'], Cloud:['Cloud Storage','bg-outline'], Utilities:['Utilities & Wifi','bg-inverse-surface']};
 const NAV = [['dashboard','Dashboard'],['group-splits','Group Splits'],['analytics','Analytics'],['settings','Settings']];
@@ -424,7 +424,7 @@ document.addEventListener('click', e => {
       case 'toggle': if (s) { s.members[name] = !s.members[name]; save(); render(); toast(s.members[name] ? `${name} marked as settled` : `${name} marked as unpaid`, s.members[name] ? 'check_circle' : 'schedule'); } break;
       case 'chip': picked.has(name) ? picked.delete(name) : picked.add(name); chips(); break;
       case 'nudge-one': if (s) copy(`Hey ${name}, here's the link to settle your ${money(share(s))} share for ${s.name}: ${PAY_LINK}`, `Copied payment message for ${name}`); break;
-      case 'nudge-all': if (unpaid.length) copy('SubSplit reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x))} for ${u.x.name}`).join('\n') + `\nPay here: ${PAY_LINK}`, `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;
+      case 'nudge-all': if (unpaid.length) copy('SetAndForget reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x))} for ${u.x.name}`).join('\n') + `\nPay here: ${PAY_LINK}`, `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;
       case 'copy-pay': copy(PAY_LINK, 'Payment link copied'); break;
       case 'copy-ledger': if (s) copy(`${s.name} (${money(s.cost)}/mo) · ${money(share(s))} per person\nAlex Chen: Paid\n` + Object.entries(s.members).map(([m, p]) => `${m}: ${p ? 'Paid' : money(share(s)) + ' due'}`).join('\n') + `\nPay here: ${PAY_LINK}`, 'Split ledger copied'); break;
     }

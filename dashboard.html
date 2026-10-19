@@ -1,575 +1,451 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubSplit – Subscription Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+<style>
+html{scroll-behavior:smooth}body{overscroll-behavior:none}
+#list,#analytics{scroll-margin-top:84px}
+.tabs{scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+:focus-visible{outline:2px solid #5046e5;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+colors:{"surface":"#f8f9ff","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","surface-container":"#e5eeff","surface-container-high":"#dce9ff","on-surface":"#0b1c30","on-surface-variant":"#464555","outline":"#777587","primary":"#3625cd","primary-container":"#5046e5","on-primary":"#ffffff","secondary":"#006c49","secondary-container":"#6cf8bb","on-secondary-container":"#00714d","secondary-fixed":"#6ffbbe","on-secondary-fixed":"#002113","tertiary":"#684000","tertiary-fixed":"#ffddb8","on-tertiary-fixed-variant":"#653e00","error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a","inverse-surface":"#213145","inverse-on-surface":"#eaf1ff"},
+fontFamily:{"headline-xl":["Geist","Inter","sans-serif"],"headline-lg":["Geist","Inter","sans-serif"],"headline-md":["Geist","Inter","sans-serif"],"headline-sm":["Geist","Inter","sans-serif"],"body-md":["Inter","sans-serif"],"body-sm":["Inter","sans-serif"],"label-caps":["Inter","sans-serif"],"label-numeric":["JetBrains Mono","monospace"]},
+fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontWeight:"600"}],"headline-lg":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["22px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px"}],"body-sm":["12px",{lineHeight:"16px"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}],"label-numeric":["13px",{lineHeight:"16px",letterSpacing:"-0.02em",fontWeight:"500"}]}
+}}}
+</script>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
 
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary-fixed-variant":"#653e00","on-error-container":"#93000a","surface-container-high":"#dce9ff","on-tertiary-container":"#ffd4a4","on-tertiary-fixed":"#2a1700","tertiary-container":"#885500","on-secondary-fixed-variant":"#005236","surface":"#f8f9ff","inverse-primary":"#c3c0ff","error-container":"#ffdad6","primary-fixed":"#e2dfff","inverse-surface":"#213145","surface-container-lowest":"#ffffff","surface-tint":"#4e44e3","surface-container-low":"#eff4ff","on-secondary-fixed":"#002113","outline-variant":"#c7c4d8","error":"#ba1a1a","on-primary-fixed":"#0f0069","outline":"#777587","on-surface-variant":"#464555","on-primary":"#ffffff","surface-dim":"#cbdbf5","surface-bright":"#f8f9ff","inverse-on-surface":"#eaf1ff","secondary":"#006c49","on-secondary":"#ffffff","surface-container-highest":"#d3e4fe","secondary-fixed":"#6ffbbe","on-tertiary":"#ffffff","primary-fixed-dim":"#c3c0ff","on-error":"#ffffff","secondary-container":"#6cf8bb","tertiary-fixed-dim":"#ffb95f","on-background":"#0b1c30","tertiary-fixed":"#ffddb8","background":"#f8f9ff","surface-variant":"#d3e4fe","on-primary-fixed-variant":"#3422cc","surface-container":"#e5eeff","primary-container":"#5046e5","secondary-fixed-dim":"#4edea3","on-primary-container":"#dbd8ff","tertiary":"#684000","on-surface":"#0b1c30","primary":"#3625cd","on-secondary-container":"#00714d"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-lg":"1.25rem","margin-lg":"3rem","gutter":"1.25rem","margin":"1rem","space-xs":"0.25rem","margin-md":"2rem","gutter-lg":"1.5rem","space-sm":"0.5rem","space-md":"0.75rem","space-xl":"2rem"},"fontFamily":{"body-lg":["Inter"],"headline-xl":["Geist"],"headline-xl-mobile":["Geist"],"label-caps":["Inter"],"label-numeric":["JetBrains Mono"],"headline-sm":["Geist"],"headline-lg":["Geist"],"headline-md":["Geist"],"body-sm":["Inter"],"body-md":["Inter"]},"fontSize":{"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"400"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.03em","fontWeight":"600"}],"headline-xl-mobile":["32px",{"lineHeight":"38px","letterSpacing":"-0.025em","fontWeight":"600"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"600"}],"label-numeric":["13px",{"lineHeight":"16px","letterSpacing":"-0.02em","fontWeight":"500"}],"headline-sm":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg":["28px",{"lineHeight":"34px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["22px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"-0.005em","fontWeight":"400"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 max-w-[1440px] mx-auto px-gutter-lg flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-xl"><div class="flex items-center gap-space-md"><img alt="SubSplit Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XV3io2zCVzz8FLQTN3Mfaumir-xtyg0tkPdUebrBZ77zC3JkY_N5c1-iSybZzkhd1Cpm0XXjWdeqMAxyMyPjtttyclyyCNXIN_aX06gSVlRxD-D85V8aeCuxSkgseCyBqiCmqBnfp6zhlT8G2NrxII6LUZqtQp8LWmt8EAbagFbMpkwHHEnmueYdfI900Aq_eM9bXlbCrdob1o7InJd7Ch7lI4ofREsIyOpUSTG3PaxA28SgONR-8IIu0X"/><span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">SubSplit</span><span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase tracking-wider">Active</span></div><nav class="hidden xl:flex items-center gap-space-xs" data-active-classes="bg-surface-container text-primary font-semibold rounded-lg"><a class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="dashboard" href="#">Dashboard</a><a aria-current="page" class="px-3 py-1.5 transition-all bg-surface-container text-primary font-semibold rounded-lg" data-path="group-splits" href="#">Group Splits</a><a class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="analytics" href="#">Analytics</a><a class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="settings" href="#">Settings</a></nav></div><div class="flex-1 max-w-md hidden md:block"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low rounded-lg text-on-surface font-body-sm text-body-sm placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" placeholder="Quick search subscriptions, roommates, services... (⌘K)" type="text"/></div></div><div class="flex items-center gap-space-md"><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-numeric text-[10px] font-bold">3</span></button><button class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary font-body-sm text-body-sm font-semibold rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all" type="button"><span class="material-symbols-outlined text-base">add</span><span>Add Subscription</span></button><div class="flex items-center gap-space-sm pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOI5Y_3Ldcyf3nOBpx8hMQwH36LXoKw9-B_F7eonMDqkLIpzvzA0ALNWlOv3hKAn-IL3rDa6-rBra48EhMZmmJEPMRs4dNkogYVttY37iz9slBVFO9ASX368tNoG5x27mfrzAWVEuFMAj_i9mZjnrlnD9kPU1n4ezvDqGel-8GZBnl-sxZO9Rg0Zw2le89v3W_87-Lbff-1ezrkJ2YSVGQUX_xOWwSGO30t1irHl1KP6GTpAmR8SSHQQ"/><div class="hidden lg:flex flex-col text-left leading-none"><span class="font-body-sm text-body-sm font-semibold text-on-surface">Alex Chen</span><span class="font-label-numeric text-[11px] text-outline">12 active</span></div></div></div></div></header><main class="w-full pt-16 bg-surface min-h-[calc(100vh-64px)]"><div class="flex flex-col w-full">
-<div class="max-w-[1440px] w-full mx-auto px-margin md:px-margin-md lg:px-gutter-lg py-space-xl flex flex-col gap-space-xl">
-<!-- Top Context & Group Switcher -->
-<div class="flex flex-col gap-space-lg">
-<div class="flex flex-wrap items-center justify-between gap-space-md border-b-0 pb-1">
-<!-- Group Switcher Pills -->
-<div class="flex items-center gap-space-sm overflow-x-auto py-1 scrollbar-none">
-<!-- Active: Apt 4B Roommates -->
-<button class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-surface-container-lowest shadow-sm text-on-surface font-body-sm font-semibold transition-all">
-<span class="w-2 h-2 rounded-full bg-primary-container"></span>
-<span>Apt 4B Roommates</span>
-<div class="flex items-center -space-x-1.5 ml-1">
-<img class="w-5 h-5 rounded-full object-cover shadow-[0_0_0_2px_#ffffff]" data-alt="Close up portrait photograph of young Asian professional smiling warmly with natural lighting and soft studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAixpce3l50ta_4Qz-9fjoRTNxvOyAmR867BaCKEwWU1osmRBUu6JQ7VPXYk5fktgJvpUwDqjjI7Q3tr20F3t9ENU5FJQUFQLH7zdnztDfDEbz5FjGvUrhUz_cGUucYRalz8g-Xyj21dTBhSR1Jqc9zl_crXcV-_lEDBjpmqXtLk_bpdPVMdcQVa_onir1qNabgVrA31-eKK7wjG9zeK8XNOQQ6lxicE8zOotgPq6i6r0AzxBl70tqOA"/>
-<img class="w-5 h-5 rounded-full object-cover shadow-[0_0_0_2px_#ffffff]" data-alt="Portrait photo of a young woman with curly brunette hair smiling outdoors in crisp soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq7V6Of0oO44XTF24lTqDCsfMt_II8sY_VlI_SJ9KAkKN8EaiRn8GlYhOcQ2vLOBvMQkmFe6HN4EZXUYE4rwxBRaqfFqehmK-mvkl6bdfOY2ddKpVfVwatlrNiT-tD2P0govFWfqGVOvCCTSMMy1VyMFfD7otX1kXQMSXBzypKyJ7VSndXhfmxEbDRARP4IEIXU8WD7Qnv3mZXdzthX3v9qBN5rErRI5G9gjhdSG6vXo5ZqG1ujFhI3Q"/>
-<img class="w-5 h-5 rounded-full object-cover shadow-[0_0_0_2px_#ffffff]" data-alt="Studio portrait of a young man with glasses and tidy trim beard looking confident against a neutral backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg0os8dCbedPEEKY1fb67hBF9k5BoXfrvgmOsfsmGvq8lRDswp83ywzib1h2AV3APNYK5ri7Btjaf1wWEIHiDvfmWYJ0pcZN2-cptxtv9QwKDOGnGPoXT04sZ1n2O1zq-IvM8b_lbVqyRQtVvZgA63nsqUDhLkkMRx_EMd41FKKaeYtLfDwpKPGFg3rZnb9IrdKqCapivdSvYPGFLCHb6xiyv5qKmdVrZwHKb0k5wEvBSGrU2irmFQQA"/>
-<div class="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant font-label-numeric text-[9px] flex items-center justify-center font-bold shadow-[0_0_0_2px_#ffffff]">+1</div>
-</div>
-</button>
-<!-- Inactive Groups -->
-<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-body-sm font-medium">
-<span>Family Plan</span>
-<span class="px-1.5 py-0.2 rounded-md bg-surface-container-high text-on-surface-variant font-label-numeric text-[10px]">3</span>
-</button>
-<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-body-sm font-medium">
-<span>Design Studio Co-op</span>
-<span class="px-1.5 py-0.2 rounded-md bg-surface-container-high text-on-surface-variant font-label-numeric text-[10px]">2</span>
-</button>
-<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest/60 hover:bg-surface-container-lowest text-primary font-body-sm font-semibold transition-all">
-<span class="material-symbols-outlined text-base">add</span>
-<span>New Group</span>
-</button>
-</div>
-<!-- Global Secondary Actions -->
-<div class="flex items-center gap-space-sm">
-<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container-low font-body-sm font-medium shadow-sm transition-all" title="Export current ledger cycle as CSV">
-<span class="material-symbols-outlined text-base text-outline">ios_share</span>
-<span class="hidden sm:inline">Export Ledger</span>
-</button>
-<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-secondary hover:bg-secondary-container/20 font-body-sm font-semibold shadow-sm transition-all" title="Trigger instant multi-party settlement run">
-<span class="material-symbols-outlined text-base">price_check</span>
-<span>Settle All Up</span>
-</button>
-<button class="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary font-body-sm font-semibold rounded-lg shadow-sm transition-all">
-<span class="material-symbols-outlined text-base">add</span>
-<span>Add Shared Bill</span>
-</button>
-</div>
-</div>
-<!-- Title & Headline Section with Status Metadata -->
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-1">
-<div>
-<div class="flex items-center gap-2 mb-1">
-<span class="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-label-caps text-label-caps uppercase tracking-wider">Recurring Cycle: Mar 2025</span>
-<span class="text-outline text-body-sm">•</span>
-<span class="font-label-numeric text-body-sm text-outline">Household ID: #SUB-4B-902</span>
-</div>
-<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Group Splits &amp; Shared Ledger</h1>
-<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mt-0.5">Manage recurring bills, optimize member balances, and track roommate settlements automatically.</p>
-</div>
-<div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm text-on-surface-variant font-body-sm">
-<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-<span>Ledger Sync: <span class="font-label-numeric text-on-surface font-medium">Just now</span></span>
-</div>
-</div>
-</div>
-<!-- Group Summary Stat Cards (3-column Bento) -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
-<!-- Card 1: Total Monthly Pool -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
-<div class="flex items-start justify-between">
-<div>
-<span class="font-label-caps text-label-caps uppercase text-outline tracking-wider block">Total Monthly Group Pool</span>
-<div class="flex items-baseline gap-2 mt-1">
-<span class="font-headline-xl text-headline-xl font-bold text-on-surface font-headline-xl">$218.40</span>
-<span class="font-body-sm text-on-surface-variant font-medium">/month</span>
-</div>
-</div>
-<div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary">
-<span class="material-symbols-outlined text-2xl">account_balance</span>
-</div>
-</div>
-<div class="mt-space-md pt-space-sm flex flex-col gap-2">
-<div class="flex items-center justify-between font-body-sm">
-<span class="text-on-surface-variant">5 Active recurring items</span>
-<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-numeric text-xs font-semibold">Your Share: $58.41/mo</span>
-</div>
-<!-- Miniature visual distribution bar -->
-<div class="w-full h-1.5 bg-surface-container-low rounded-full overflow-hidden flex">
-<div class="h-full bg-primary-container" style="width: 27%;" title="Your share (26.7%)"></div>
-<div class="h-full bg-surface-dim" style="width: 24%;" title="Sarah (24%)"></div>
-<div class="h-full bg-surface-container-highest" style="width: 36%;" title="David (36.6%)"></div>
-<div class="h-full bg-outline-variant" style="width: 13%;" title="Marcus (12.7%)"></div>
-</div>
-</div>
-</div>
-<!-- Card 2: Net Balance for Alex (Inverted Highlight Card) -->
-<div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-space-lg shadow-md flex flex-col justify-between relative overflow-hidden">
-<div class="absolute -right-4 -bottom-4 w-28 h-28 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
-<div class="flex items-start justify-between z-10">
-<div>
-<span class="font-label-caps text-label-caps uppercase text-inverse-primary tracking-wider block">Net Balance for Alex (You)</span>
-<div class="flex items-baseline gap-2 mt-1">
-<span class="font-headline-xl text-headline-xl font-bold text-secondary-fixed font-headline-xl">+$68.45</span>
-<span class="font-body-sm text-surface-container-highest">Owed to you</span>
-</div>
-</div>
-<div class="w-10 h-10 rounded-xl bg-surface-container-lowest/10 flex items-center justify-center text-secondary-fixed">
-<span class="material-symbols-outlined text-2xl">trending_up</span>
-</div>
-</div>
-<div class="mt-space-md pt-space-sm flex items-center justify-between z-10">
-<div class="flex items-center gap-1.5">
-<span class="w-2 h-2 rounded-full bg-error-container"></span>
-<span class="font-body-sm text-inverse-on-surface/90">3 shares pending</span>
-</div>
-<button class="px-2.5 py-1 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-body-sm text-xs font-semibold shadow-sm transition-all flex items-center gap-1">
-<span class="material-symbols-outlined text-sm">forward_to_inbox</span>
-<span>Send Reminder</span>
-</button>
-</div>
-</div>
-<!-- Card 3: Settlement Health -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
-<div class="flex items-start justify-between">
-<div>
-<span class="font-label-caps text-label-caps uppercase text-outline tracking-wider block">Settlement Health (Cycle: Mar)</span>
-<div class="flex items-baseline gap-2 mt-1">
-<span class="font-headline-xl text-headline-xl font-bold text-on-surface font-headline-xl">82%</span>
-<span class="font-body-sm text-secondary font-medium">Settled</span>
-</div>
-</div>
-<!-- Inline Spark Donut Chart SVG -->
-<div class="relative w-12 h-12 flex items-center justify-center">
-<svg class="w-12 h-12 -rotate-90" viewbox="0 0 36 36">
-<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
-<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="82, 100" stroke-linecap="round" stroke-width="3.5"></path>
-</svg>
-<span class="absolute font-label-numeric text-[11px] font-bold text-on-surface">82%</span>
-</div>
-</div>
-<div class="mt-space-md pt-space-sm flex items-center justify-between text-body-sm">
-<div class="flex items-center gap-1.5 text-on-surface-variant">
-<span class="material-symbols-outlined text-base text-tertiary">schedule</span>
-<span>Renews in <strong class="text-on-surface font-semibold">4 days</strong></span>
-</div>
-<span class="text-outline font-label-numeric text-xs">Due Mar 1, 2025</span>
-</div>
-</div>
-</div>
-<!-- Main Two-Column Structure -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-<!-- Left Column: Shared Subscriptions Table & Activity Feed (~65%) -->
-<div class="lg:col-span-8 flex flex-col gap-space-xl">
-<!-- Shared Subscriptions Master Card -->
-<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
-<!-- Filter & Search Toolbar -->
-<div class="p-space-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Shared Household Ledger</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Recurring items split between apartment members</p>
-</div>
-<!-- Segmented Control Filters -->
-<div class="flex items-center p-1 bg-surface-container-low rounded-lg text-on-surface-variant font-body-sm">
-<button class="px-3 py-1 rounded-md bg-surface-container-lowest font-semibold text-primary shadow-xs transition-all">All (5)</button>
-<button class="px-3 py-1 rounded-md hover:text-on-surface transition-all">You Pay (3)</button>
-<button class="px-3 py-1 rounded-md hover:text-on-surface transition-all">Others Pay (2)</button>
-</div>
-</div>
-<!-- Subscription Rows List -->
-<div class="flex flex-col">
-<!-- Item 1: Netflix 4K UHD (Alex pays, Sarah pending) -->
-<div class="p-space-lg hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div class="flex items-start sm:items-center gap-space-md min-w-0">
-<div class="w-11 h-11 rounded-xl bg-error/10 text-error flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">movie</span>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-2">
-<span class="font-body-lg text-body-lg font-semibold text-on-surface truncate">Netflix 4K Premium</span>
-<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase">Alex Pays</span>
-</div>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5">
-<span class="font-label-numeric text-on-surface font-semibold">$22.99/mo</span>
-<span>•</span>
-<span>4-way split ($5.75/ea)</span>
-<span>•</span>
-<span class="text-tertiary font-medium flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Sarah pending
-                    </span>
-</div>
-</div>
-</div>
-<div class="flex items-center justify-between sm:justify-end gap-space-md shrink-0">
-<div class="flex flex-col items-start sm:items-end">
-<span class="font-label-numeric text-body-md font-bold text-secondary">+$17.24 collected</span>
-<span class="text-error font-body-sm text-xs font-medium">1 unsettled share</span>
-</div>
-<div class="flex items-center gap-1">
-<button class="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Ping Sarah for payment">
-<span class="material-symbols-outlined text-lg">notifications_active</span>
-</button>
-<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
-<span class="material-symbols-outlined text-lg">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Item 2: Spotify Family (All Settled) -->
-<div class="p-space-lg hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div class="flex items-start sm:items-center gap-space-md min-w-0">
-<div class="w-11 h-11 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">music_note</span>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-2">
-<span class="font-body-lg text-body-lg font-semibold text-on-surface truncate">Spotify Family Plan</span>
-<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase">Alex Pays</span>
-</div>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5">
-<span class="font-label-numeric text-on-surface font-semibold">$16.99/mo</span>
-<span>•</span>
-<span>3-way split ($5.66/ea)</span>
-<span>•</span>
-<span class="text-secondary font-medium">David &amp; Marcus settled</span>
-</div>
-</div>
-</div>
-<div class="flex items-center justify-between sm:justify-end gap-space-md shrink-0">
-<div class="flex flex-col items-start sm:items-end">
-<span class="font-label-numeric text-body-md font-bold text-secondary">+$11.33 received</span>
-<span class="px-2 py-0.2 rounded bg-secondary-container/40 text-on-secondary-container font-label-caps text-[10px] uppercase font-bold">100% Settled</span>
-</div>
-<div class="flex items-center gap-1">
-<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
-<span class="material-symbols-outlined text-lg">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Item 3: Home Gigabit Fiber (Paid by David Kim) -->
-<div class="p-space-lg hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div class="flex items-start sm:items-center gap-space-md min-w-0">
-<div class="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">router</span>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-2">
-<span class="font-body-lg text-body-lg font-semibold text-on-surface truncate">Sonic Fiber Gigabit Wi-Fi</span>
-<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-caps text-[10px] uppercase">David Pays</span>
-</div>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5">
-<span class="font-label-numeric text-on-surface font-semibold">$80.00/mo</span>
-<span>•</span>
-<span>4-way split ($20.00/ea)</span>
-<span>•</span>
-<span>Next cycle Mar 5</span>
-</div>
-</div>
-</div>
-<div class="flex items-center justify-between sm:justify-end gap-space-md shrink-0">
-<div class="flex flex-col items-start sm:items-end">
-<span class="font-label-numeric text-body-md font-bold text-on-surface">-$20.00 your share</span>
-<span class="text-secondary font-body-sm text-xs font-semibold flex items-center gap-0.5">
-<span class="material-symbols-outlined text-sm">check_circle</span> You paid
-                  </span>
-</div>
-<div class="flex items-center gap-1">
-<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
-<span class="material-symbols-outlined text-lg">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Item 4: Adobe Creative Cloud (Paid by Marcus Vance) -->
-<div class="p-space-lg hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div class="flex items-start sm:items-center gap-space-md min-w-0">
-<div class="w-11 h-11 rounded-xl bg-error-container text-error flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">palette</span>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-2">
-<span class="font-body-lg text-body-lg font-semibold text-on-surface truncate">Adobe Creative Cloud All Apps</span>
-<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-caps text-[10px] uppercase">Marcus Pays</span>
-</div>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5">
-<span class="font-label-numeric text-on-surface font-semibold">$54.99/mo</span>
-<span>•</span>
-<span>2-way split ($27.50/ea)</span>
-<span>•</span>
-<span>Marcus &amp; Alex</span>
-</div>
-</div>
-</div>
-<div class="flex items-center justify-between sm:justify-end gap-space-md shrink-0">
-<div class="flex flex-col items-start sm:items-end">
-<span class="font-label-numeric text-body-md font-bold text-on-surface">-$27.50 your share</span>
-<span class="text-secondary font-body-sm text-xs font-semibold flex items-center gap-0.5">
-<span class="material-symbols-outlined text-sm">check_circle</span> Settled
-                  </span>
-</div>
-<div class="flex items-center gap-1">
-<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
-<span class="material-symbols-outlined text-lg">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Item 5: Google One Storage (Alex pays, David co-split) -->
-<div class="p-space-lg hover:bg-surface-container-low/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-space-md bg-surface-container-lowest">
-<div class="flex items-start sm:items-center gap-space-md min-w-0">
-<div class="w-11 h-11 rounded-xl bg-surface-container-high text-primary flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">cloud</span>
-</div>
-<div class="min-w-0">
-<div class="flex items-center gap-2">
-<span class="font-body-lg text-body-lg font-semibold text-on-surface truncate">Google One Cloud 2TB</span>
-<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase">Alex Pays</span>
-</div>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5">
-<span class="font-label-numeric text-on-surface font-semibold">$9.99/mo</span>
-<span>•</span>
-<span>2-way split ($5.00/ea)</span>
-<span>•</span>
-<span>Auto-cleared monthly</span>
-</div>
-</div>
-</div>
-<div class="flex items-center justify-between sm:justify-end gap-space-md shrink-0">
-<div class="flex flex-col items-start sm:items-end">
-<span class="font-label-numeric text-body-md font-bold text-secondary">+$4.99 received</span>
-<span class="px-2 py-0.2 rounded bg-secondary-container/40 text-on-secondary-container font-label-caps text-[10px] uppercase font-bold">Settled</span>
-</div>
-<div class="flex items-center gap-1">
-<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
-<span class="material-symbols-outlined text-lg">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Payment Activity & Settlement Audit Stream -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<div>
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Settlement Activity &amp; Audit Log</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Verified household transactions and automated sync events</p>
-</div>
-<button class="text-primary hover:text-primary-container font-body-sm font-semibold flex items-center gap-1">
-<span>View full log</span>
-<span class="material-symbols-outlined text-sm">arrow_forward</span>
-</button>
-</div>
-<div class="flex flex-col gap-space-sm pt-2">
-<!-- Activity 1 -->
-<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
-<span class="material-symbols-outlined text-base">payments</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-body-sm text-on-surface font-semibold">Marcus Vance</span>
-<span class="text-outline text-xs">settled with</span>
-<span class="font-body-sm text-on-surface font-medium">Alex Chen</span>
-</div>
-<div class="text-outline font-label-numeric text-xs">Spotify share Feb-Mar • Yesterday at 4:18 PM</div>
-</div>
-</div>
-<div class="flex items-center gap-3">
-<span class="font-label-numeric text-body-md font-bold text-secondary">+$5.75</span>
-<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-caps text-[10px]">Venmo</span>
-</div>
-</div>
-<!-- Activity 2 -->
-<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
-<span class="material-symbols-outlined text-base">swap_horiz</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-body-sm text-on-surface font-semibold">David Kim</span>
-<span class="text-outline text-xs">auto-cleared with</span>
-<span class="font-body-sm text-on-surface font-medium">Alex Chen</span>
-</div>
-<div class="text-outline font-label-numeric text-xs">Offset Sonic Fiber against Google One • Feb 24</div>
-</div>
-</div>
-<div class="flex items-center gap-3">
-<span class="font-label-numeric text-body-md font-bold text-on-surface">$15.01 net</span>
-<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-caps text-[10px]">In-App Balance</span>
-</div>
-</div>
-<!-- Activity 3 -->
-<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-error-container flex items-center justify-center text-error">
-<span class="material-symbols-outlined text-base">forward_to_inbox</span>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<span class="font-body-sm text-on-surface font-semibold">Automated Ping Sent</span>
-<span class="text-outline text-xs">to</span>
-<span class="font-body-sm text-on-surface font-medium">Sarah Jenkins</span>
-</div>
-<div class="text-outline font-label-numeric text-xs">Netflix 4K share overdue 6 days • Feb 22</div>
-</div>
-</div>
-<div class="flex items-center gap-3">
-<span class="font-label-numeric text-body-sm text-tertiary">$11.50 pending</span>
-<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-caps text-[10px]">Push &amp; SMS</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Right Column: Sidebar / Settlement Hub & Optimizers (~35%) -->
-<div class="lg:col-span-4 flex flex-col gap-space-xl">
-<!-- Roommate Settlement Hub -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Roommate Balances</h3>
-<span class="font-label-numeric text-body-sm text-outline">4 Members</span>
-</div>
-<div class="flex flex-col gap-space-md pt-1">
-<!-- Member 1: Sarah Jenkins (Owes) -->
-<div class="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-3">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<img class="w-9 h-9 rounded-full object-cover" data-alt="Portrait photography of young cheerful woman with curly brunette hair smiling brightly in sunny apartment interior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9VRb1kYrDatnbvbXC7o4fJphjFRZjHiM1_A57MX8INgJLEhTU7OEn-mPehrgb8xKqHO5oFnM_gzPrHtMkHLDcrRP6SnZjlMiRz2XDqhSFvQi0yEf0jnVInoIdGuJArVsfeNfmrhjjdNO6Y_MDm99pZFhNJxf45wBzysIncWBS_BKUjDRmzclrBpcOQbBhE432WX7hAfHckeUGfLMjk7VNBaJ4JJ_xVtMbsA26srY6o1aJpbdU64_Zdw"/>
-<div>
-<span class="font-body-sm font-bold text-on-surface block leading-tight">Sarah Jenkins</span>
-<span class="text-outline font-label-numeric text-xs">Room 2</span>
-</div>
-</div>
-<div class="text-right">
-<span class="font-label-numeric text-headline-sm font-bold text-error block leading-none">+$11.50</span>
-<span class="font-label-caps text-[10px] text-error font-semibold uppercase">Owes You</span>
-</div>
-</div>
-<div class="text-xs text-on-surface-variant bg-surface-container-lowest p-2 rounded-lg">
-                Unsettled: <strong>Netflix 4K</strong> (Jan &amp; Feb cycle)
-              </div>
-<div class="flex items-center gap-2">
-<button class="flex-1 py-1.5 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-body-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
-<span class="material-symbols-outlined text-sm">chat_bubble</span>
-<span>Nudge on Venmo</span>
-</button>
-<button class="py-1.5 px-3 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high font-body-sm text-xs font-semibold transition-all">
-                  Mark Paid
-                </button>
-</div>
-</div>
-<!-- Member 2: Marcus Vance (Settled) -->
-<div class="p-3.5 rounded-xl bg-surface-container-low/60 flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<img class="w-9 h-9 rounded-full object-cover" data-alt="Close studio headshot portrait of modern man with clean glasses and warm friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJFAd1f210-bnNFG_ewVybdyAr4kuHiWQE5mviutW5eDuZBvBxD3q34mOKHesY5qtvcpirIHUjUYf5e2YCxHxIdl01RNktpZAjYCaUk4iXMYaU-26bvhGU_DyjifYDZGT0Q36KBzHj4oshbD-PU-U_BT7ONvCwAymxdOLVWCqJP2yrAG1SiSOLdnRH-n1CsiJ_fwF9deMZt5mv87S_7YSnSQrI8OmdDKtEDALKdqiJjOMKpisTNuhOHA"/>
-<div>
-<span class="font-body-sm font-semibold text-on-surface block leading-tight">Marcus Vance</span>
-<span class="text-outline font-label-numeric text-xs">Room 1 • Settled yesterday</span>
-</div>
-</div>
-<div class="text-right">
-<span class="font-label-numeric text-body-md font-bold text-secondary block leading-none">$0.00</span>
-<span class="font-label-caps text-[10px] text-secondary font-bold uppercase">All Square</span>
-</div>
-</div>
-<!-- Member 3: David Kim (Settled) -->
-<div class="p-3.5 rounded-xl bg-surface-container-low/60 flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<img class="w-9 h-9 rounded-full object-cover" data-alt="Sharp clear portrait of stylish East Asian male in professional studio soft illumination" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfkzKZyzwo2xWemWOfTqs0TAYNKtJb4j7vVn8qtur6Mt9vvLU7Qi2qkKqH1h1PEevfjot-HF0xjPQiwShk1QcKgkfPeaFbrV2avSND1v-6XOuSFB2VxUPR418NtNjAKVXd18DFaQUrvTH0n8BlCgDFMO1QtHyX8a5lcsbj20v-oG5GNcED5SbHGZ1nBU7aFReobRulpPAXbfeU8eZ2Ui9Co8bXxK9t36VTiq4mkvTakwlv0JfAFaetdg"/>
-<div>
-<span class="font-body-sm font-semibold text-on-surface block leading-tight">David Kim</span>
-<span class="text-outline font-label-numeric text-xs">Room 3 • Auto-clearing active</span>
-</div>
-</div>
-<div class="text-right">
-<span class="font-label-numeric text-body-md font-bold text-secondary block leading-none">$0.00</span>
-<span class="font-label-caps text-[10px] text-secondary font-bold uppercase">All Square</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Smart Settlement Optimizer (Visual Debt Consolidation) -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-1.5">
-<span class="material-symbols-outlined text-primary text-xl">auto_fix_high</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Debt Simplification</h3>
-</div>
-<span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-label-caps text-[10px] uppercase font-bold">Enabled</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
-            SubSplit consolidates multi-way debts to minimize transaction fees and separate bank transfers.
-          </p>
-<!-- Simplification Flow Visual Card -->
-<div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col gap-3">
-<div class="flex items-center justify-between text-body-sm">
-<span class="text-outline">Calculated Savings:</span>
-<span class="font-label-numeric text-secondary font-bold">4 transfers reduced to 1</span>
-</div>
-<!-- Visual Flow Connector -->
-<div class="flex items-center justify-between gap-2 py-2">
-<div class="flex flex-col items-center">
-<div class="w-8 h-8 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center font-bold text-xs text-on-surface">SJ</div>
-<span class="text-[10px] text-on-surface-variant mt-1">Sarah</span>
-</div>
-<div class="flex-1 flex flex-col items-center gap-1">
-<span class="font-label-numeric text-xs font-bold text-primary">$11.50</span>
-<div class="w-full flex items-center">
-<div class="h-0.5 w-full bg-primary-container rounded"></div>
-<span class="material-symbols-outlined text-primary -ml-2 text-sm">arrow_forward</span>
-</div>
-<span class="text-[9px] text-outline font-label-numeric">direct route</span>
-</div>
-<div class="flex flex-col items-center">
-<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary shadow-sm flex items-center justify-center font-bold text-xs">AC</div>
-<span class="text-[10px] text-on-surface font-bold mt-1">You</span>
-</div>
-</div>
-<div class="text-[11px] text-outline-variant bg-surface-container-lowest/80 p-2 rounded text-center">
-              Marcus &amp; David's Wi-Fi balance pre-offset against Adobe CC.
+<header class="fixed top-0 inset-x-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,.04)]">
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 sm:gap-8 min-w-0">
+      <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
+        <span class="font-headline-sm text-headline-sm font-bold">SubSplit</span>
+        <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
+      </div>
+      <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
+    </div>
+    <div class="flex-1 max-w-md hidden md:block">
+      <label class="relative flex items-center w-full">
+        <span class="sr-only">Search subscriptions</span>
+        <span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">search</span>
+        <input data-search type="search" autocomplete="off" placeholder="Search subscriptions… (Ctrl/⌘ K)" class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low rounded-lg text-body-sm placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all">
+      </label>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button type="button" data-act="bell" aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span id="bell-count" class="absolute top-1 right-1 hidden h-4 min-w-4 px-1 items-center justify-center rounded-full bg-error text-on-error font-label-numeric text-[10px] font-bold"></span>
+      </button>
+      <button type="button" data-act="open" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm transition-all"><span class="material-symbols-outlined text-base">add</span>Add subscription</button>
+      <div class="flex items-center gap-2 pl-1">
+        <span class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">AC</span>
+        <div class="hidden lg:flex flex-col leading-none"><span class="text-body-sm font-semibold">Alex Chen</span><span id="hdr-active" class="font-label-numeric text-[11px] text-outline"></span></div>
+      </div>
+    </div>
+  </div>
+  <div id="nav-m" class="hidden xl:hidden border-t border-surface-container bg-surface-container-lowest px-4 py-2"></div>
+</header>
+
+<main class="w-full pt-16 min-h-screen">
+  <h1 class="sr-only">SubSplit dashboard</h1>
+  <div id="toasts" class="fixed bottom-6 right-4 sm:right-6 z-[70] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+  <div id="banner"></div>
+
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <!-- Summary cards -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch" aria-label="Summary">
+      <div class="md:col-span-5 rounded-xl bg-inverse-surface text-inverse-on-surface p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-primary-container/20 blur-2xl pointer-events-none"></div>
+        <div class="relative">
+          <div class="text-label-caps font-label-caps uppercase text-inverse-on-surface/70 mb-4">Your monthly total</div>
+          <div class="flex items-baseline gap-2 mb-2"><span id="stat-total" class="font-headline-xl text-headline-xl text-white">$0.00</span><span class="text-body-sm text-inverse-on-surface/60">/ month</span></div>
+          <p id="stat-active" class="text-body-sm text-inverse-on-surface/80 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-secondary-fixed"></span><span></span></p>
+        </div>
+        <div class="relative pt-5 mt-4 flex items-center gap-2 flex-wrap">
+          <div class="px-3 py-1.5 rounded-lg bg-white/10 text-xs flex gap-1.5"><span class="text-inverse-on-surface/60">Solo:</span><span id="stat-solo" class="font-label-numeric font-semibold text-white"></span></div>
+          <div class="px-3 py-1.5 rounded-lg bg-white/10 text-xs flex gap-1.5"><span class="text-inverse-on-surface/60">Your split share:</span><span id="stat-split" class="font-label-numeric font-semibold text-secondary-fixed"></span></div>
+        </div>
+      </div>
+
+      <div class="md:col-span-4 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="text-label-caps font-label-caps uppercase text-on-surface-variant mb-3">Roommates owe you</div>
+          <div class="flex items-baseline gap-2 mb-1"><span id="stat-owed" class="font-headline-xl text-headline-xl">$0.00</span><span class="text-body-sm text-outline">unsettled</span></div>
+          <p class="text-body-sm text-on-surface-variant flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">group</span><span id="stat-pending"></span></p>
+        </div>
+        <div class="pt-5 flex items-center gap-2">
+          <button type="button" data-act="nudge-all" id="btn-nudge-all" class="flex-1 py-2 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary text-body-sm font-semibold shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"><span class="material-symbols-outlined text-base">content_copy</span><span>Copy reminder</span></button>
+          <button type="button" data-act="copy-pay" aria-label="Copy payment link" title="Copy payment link" class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container"><span class="material-symbols-outlined text-base">link</span></button>
+        </div>
+      </div>
+
+      <div class="md:col-span-3 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3"><span class="text-label-caps font-label-caps uppercase text-on-surface-variant">Next 7 days</span><span class="material-symbols-outlined text-tertiary text-lg">calendar_month</span></div>
+          <div class="flex items-baseline gap-1.5 mb-1"><span id="stat-week" class="font-headline-lg text-headline-lg font-bold">$0.00</span><span class="text-body-sm text-outline">due</span></div>
+          <p id="stat-week-n" class="text-body-sm text-on-surface-variant"></p>
+        </div>
+        <div id="week-list" class="space-y-2 pt-3"></div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Subscriptions -->
+      <section id="list" class="lg:col-span-8 space-y-4" aria-label="Subscriptions">
+        <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="tabs flex items-center p-1 rounded-lg bg-surface-container-low overflow-x-auto max-w-full self-start" role="group" aria-label="Filter by type" id="tabs"></div>
+            <div class="flex items-center gap-2">
+              <label class="relative flex-1 sm:w-52">
+                <span class="sr-only">Filter by category</span>
+                <span class="material-symbols-outlined absolute left-2.5 top-1.5 text-outline text-base pointer-events-none">filter_list</span>
+                <select id="cat-filter" class="w-full pl-8 pr-6 py-1.5 bg-surface-container-low rounded-lg text-xs focus:outline-none cursor-pointer"></select>
+              </label>
+              <button type="button" data-act="open" aria-label="Add subscription" title="Add subscription" class="p-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary shadow-sm shrink-0"><span class="material-symbols-outlined text-lg">add</span></button>
             </div>
-</div>
-</div>
-<!-- Payment Handles & Group Automation Settings -->
-<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Group Payment Config</h3>
-<div class="flex flex-col gap-space-sm text-body-sm">
-<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-base text-primary">account_circle</span>
-<span class="text-on-surface font-medium">Your Venmo Handle</span>
-</div>
-<span class="font-label-numeric text-xs font-semibold text-primary">@alexchen-split</span>
-</div>
-<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-base text-secondary">verified_user</span>
-<span class="text-on-surface font-medium">Zelle Connected</span>
-</div>
-<span class="font-label-numeric text-xs font-semibold text-secondary">alex@chen.me</span>
-</div>
-<div class="flex items-center justify-between pt-2">
-<div>
-<span class="font-body-sm font-semibold text-on-surface block leading-snug">Auto-reminder Ping</span>
-<span class="text-xs text-on-surface-variant">Notify 48h before billing cycle</span>
-</div>
-<label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only peer" type="checkbox"/>
-<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-surface-dim after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
-</label>
-</div>
-<div class="flex items-center justify-between pt-1">
-<div>
-<span class="font-body-sm font-semibold text-on-surface block leading-snug">Equal Split Enforcer</span>
-<span class="text-xs text-on-surface-variant">Default 25% share per member</span>
-</div>
-<label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only peer" type="checkbox"/>
-<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-surface-dim after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
-</label>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,0.02)]"><div class="max-w-[1440px] mx-auto px-gutter-lg py-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm"><div>© 2025 SubSplit Technologies Inc. All rights reserved.</div><div class="flex items-center gap-space-lg"><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Audit Log</a><a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Support</a></div></div></footer></body></html>
+          </div>
+          <label class="relative flex items-center md:hidden">
+            <span class="sr-only">Search subscriptions</span>
+            <span class="material-symbols-outlined absolute left-3 text-outline text-lg pointer-events-none">search</span>
+            <input data-search type="search" placeholder="Search subscriptions…" class="w-full pl-9 pr-4 py-2 bg-surface-container-low rounded-lg text-body-sm placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container">
+          </label>
+        </div>
+        <ul id="subs" class="space-y-2.5"></ul>
+      </section>
+
+      <!-- Sidebar -->
+      <aside class="lg:col-span-4 space-y-5">
+        <div id="settle" class="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-4 scroll-mt-24"></div>
+        <div id="analytics" class="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between"><h2 class="font-headline-sm text-headline-sm text-sm font-semibold">Monthly spend by category</h2><span id="cat-total" class="text-xs font-label-numeric text-outline"></span></div>
+          <div id="cat-bar" class="h-2.5 w-full bg-surface-container rounded-full overflow-hidden flex gap-0.5" role="img" aria-label="Spend by category"></div>
+          <div id="cat-legend" class="grid grid-cols-2 gap-2 pt-1 text-[11px] text-on-surface-variant"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Add subscription modal -->
+  <div id="modal" inert aria-hidden="true" class="fixed inset-0 z-[60] bg-inverse-surface/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div role="dialog" aria-modal="true" aria-labelledby="modal-title" id="modal-box" class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 space-y-5 scale-95 transition-transform duration-200">
+      <div class="flex items-start justify-between">
+        <div><h2 id="modal-title" class="font-headline-md text-headline-md text-lg font-bold">Add subscription</h2><p class="text-body-sm text-outline">Track a recurring charge or split it with roommates</p></div>
+        <button type="button" data-act="close" aria-label="Close" class="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-xl">close</span></button>
+      </div>
+      <form id="form" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label for="f-name" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Name</label>
+            <input id="f-name" required maxlength="60" placeholder="e.g. Disney+ bundle" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+          <div><label for="f-cat" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Category</label>
+            <select id="f-cat" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></select></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label for="f-cost" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Total cost ($/mo)</label>
+            <div class="relative"><span class="absolute left-3 top-2 text-outline text-sm">$</span>
+            <input id="f-cost" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="14.99" class="w-full pl-7 pr-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div></div>
+          <div id="wrap-date"><label for="f-date" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Next billing date</label>
+            <input id="f-date" type="date" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-container-low space-y-3">
+          <label class="flex items-center justify-between gap-3 cursor-pointer">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary text-lg">timer</span><span><span class="block text-xs font-semibold">This is a free trial</span><span class="block text-[11px] text-outline">See it in the alert banner before you're billed</span></span></span>
+            <input id="f-trial" type="checkbox" class="w-4 h-4 rounded accent-[#5046e5] cursor-pointer">
+          </label>
+          <div id="trial-panel" class="hidden pt-2 border-t border-surface-container">
+            <label for="f-trial-date" class="block text-label-caps font-label-caps uppercase text-tertiary mb-1">Trial ends on</label>
+            <input id="f-trial-date" type="date" class="w-full px-3 py-1.5 bg-surface-container-lowest rounded-lg text-xs font-label-numeric focus:outline-none focus:ring-2 focus:ring-primary-container">
+          </div>
+        </div>
+        <fieldset class="p-3 rounded-xl bg-surface-container-low space-y-2">
+          <div class="flex items-center justify-between"><legend class="text-label-caps font-label-caps uppercase text-on-surface-variant float-left">Split with roommates</legend><span id="split-calc" class="text-[11px] font-label-numeric text-primary font-semibold"></span></div>
+          <div id="chips" class="flex items-center gap-2 flex-wrap clear-both pt-1"></div>
+        </fieldset>
+        <div class="flex items-center justify-end gap-2.5 pt-1">
+          <button type="button" data-act="close" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-body-sm font-semibold shadow-sm flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">save</span>Save subscription</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
+    <div>© <span id="yr"></span> SubSplit Technologies Inc. All rights reserved.</div>
+    <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const PAY_LINK = 'https://venmo.com/u/AlexChenSubSplit', KEY = 'subsplit.v2';
+const ROOMMATES = ['Marcus', 'Sarah', 'David'];
+const CATS = {Streaming:['Streaming','bg-secondary'], Software:['Software & Productivity','bg-primary'], 'AI Tools':['AI Tools','bg-tertiary'], Cloud:['Cloud Storage','bg-outline'], Utilities:['Utilities & Wifi','bg-inverse-surface']};
+const NAV = [['dashboard','Dashboard'],['group-splits','Group Splits'],['analytics','Analytics'],['settings','Settings']];
+
+// ---------- helpers ----------
+const money = n => '$' + n.toFixed(2);
+const sum = a => a.reduce((x, y) => x + y, 0);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso = d => d.toLocaleDateString('sv');
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const plus = n => { const d = today(); d.setDate(d.getDate() + n); return iso(d); };
+const parse = s => new Date(s + 'T00:00');
+const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+const inDays = d => Math.round((d - today()) / 864e5);
+const when = n => n <= 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const people = s => 1 + Object.keys(s.members).length;
+const share = s => s.cost / people(s);
+const nextDate = s => { const d = parse(s.date); if (!s.trial) while (d < today()) d.setMonth(d.getMonth() + 1); return d; };
+
+// ---------- data (sample data; replace with your API) ----------
+const seed = () => [
+  {id:'netflix', name:'Netflix 4K UHD', cat:'Streaming', icon:'movie', tone:'bg-red-600/10 text-red-600', cost:22.99, date:plus(6), members:{Marcus:true, Sarah:false, David:true}},
+  {id:'figma', name:'Figma Pro Trial', cat:'Software', icon:'draw', tone:'bg-tertiary-fixed text-on-tertiary-fixed-variant', cost:15, date:plus(2), trial:true, members:{}},
+  {id:'spotify', name:'Spotify Family', cat:'Streaming', icon:'music_note', tone:'bg-secondary-container text-secondary', cost:16.99, date:plus(14), members:{Marcus:true, Sarah:true}},
+  {id:'chatgpt', name:'ChatGPT Plus', cat:'AI Tools', icon:'smart_toy', tone:'bg-surface-container-high text-primary', cost:20, date:plus(3), members:{}},
+  {id:'google', name:'Google One 2TB', cat:'Cloud', icon:'cloud_sync', tone:'bg-blue-500/10 text-primary', cost:9.99, date:plus(20), members:{David:true}},
+  {id:'adobe', name:'Adobe Creative Cloud', cat:'Software', icon:'palette', tone:'bg-red-700/10 text-red-700', cost:54.99, date:plus(24), members:{Marcus:false}},
+  {id:'claude', name:'Claude Pro', cat:'AI Tools', icon:'psychology', tone:'bg-purple-500/10 text-purple-700', cost:20, date:plus(17), members:{}}
+];
+let subs; try { subs = JSON.parse(localStorage.getItem(KEY)); } catch {}
+if (!Array.isArray(subs)) subs = seed();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(subs)); } catch {} };
+
+let tab = 'all', cat = 'all', q = '', sel = null, page = 'dashboard', bannerOff = false, picked = new Set(), lastFocus = null;
+
+// ---------- toast / clipboard ----------
+function toast(msg, icon = 'check_circle') {
+  const t = document.createElement('div');
+  t.className = 'pointer-events-auto bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs transition-all duration-300 translate-y-4 opacity-0';
+  t.innerHTML = `<span class="material-symbols-outlined text-sm text-secondary-fixed">${icon}</span><span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.remove('translate-y-4', 'opacity-0'));
+  setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => t.remove(), 300); }, 3200);
+}
+async function copy(text, okMsg) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch {
+    const a = document.createElement('textarea'); a.value = text; a.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(a); a.select();
+    try { ok = document.execCommand('copy'); } catch {}
+    a.remove();
+  }
+  ok ? toast(okMsg) : toast('Copy failed. Your browser blocked clipboard access.', 'error');
+}
+
+// ---------- render ----------
+function itemHTML(s) {
+  const d = nextDate(s), dd = inDays(d), m = Object.entries(s.members), shared = m.length > 0, paid = m.filter(x => x[1]).length;
+  const badge = s.trial
+    ? `<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[11px] font-label-caps uppercase">${dd <= 7 ? 'Trial ending' : 'Free trial'}</span>`
+    : `<span class="px-2 py-0.5 rounded-full bg-surface-container text-outline text-[11px] font-label-caps uppercase">${esc(CATS[s.cat]?.[0] || s.cat)}</span>`;
+  const when1 = s.trial
+    ? `<span class="flex items-center gap-1 font-label-numeric text-[11px] text-tertiary font-semibold"><span class="material-symbols-outlined text-xs">timer</span>Ends ${when(dd)} (${fmtDate(d)})</span>`
+    : `<span class="flex items-center gap-1 font-label-numeric text-[11px]"><span class="material-symbols-outlined text-xs">schedule</span>Renews ${fmtDate(d)} (${when(dd)})</span>`;
+  const who = shared ? `<span class="text-secondary font-medium">Split with ${plural(m.length, 'roommate')}</span>` : `<span class="text-outline">${s.trial ? 'Personal account' : 'Personal workspace'}</span>`;
+  const amt = s.trial
+    ? `<div class="font-label-numeric text-sm font-bold">${money(s.cost)} <span class="text-xs text-outline font-normal">/mo if kept</span></div><div class="text-[11px] font-label-numeric text-tertiary font-semibold">$0.00 right now</div>`
+    : shared
+    ? `<div class="font-label-numeric text-sm font-bold">${money(share(s))} <span class="text-xs text-outline font-normal">your share</span></div><div class="text-[11px] font-label-numeric text-outline">${money(s.cost)}/mo total</div>`
+    : `<div class="font-label-numeric text-sm font-bold">${money(s.cost)} <span class="text-xs text-outline font-normal">/mo</span></div><div class="text-[11px] font-label-numeric text-outline">Solo charge</div>`;
+  const status = s.trial
+    ? `<button type="button" data-act="remove" data-id="${s.id}" class="px-2.5 py-1 text-xs font-semibold rounded bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-all">Cancel trial</button>`
+    : shared
+    ? `<span class="px-2 py-1 rounded text-[11px] font-label-caps font-semibold ${paid === m.length ? 'bg-secondary-fixed text-on-secondary-fixed' : 'bg-amber-100 text-amber-800'}">${paid === m.length ? 'All settled' : `${paid}/${m.length} settled`}</span>
+       <button type="button" data-act="inspect" data-id="${s.id}" aria-label="Inspect split for ${esc(s.name)}" title="Inspect split" class="p-1.5 rounded-lg ${s.id === sel ? 'text-primary bg-surface-container-low' : 'text-outline'} hover:text-primary hover:bg-surface-container-low"><span class="material-symbols-outlined text-lg">group</span></button>`
+    : `<span class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant text-[11px] font-label-caps">Solo</span>`;
+  return `<li class="rounded-xl bg-surface-container-lowest p-4 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-center gap-3.5 min-w-0">
+      <div class="w-11 h-11 rounded-xl ${s.tone || 'bg-primary-container/20 text-primary'} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-2xl">${s.icon || 'loyalty'}</span></div>
+      <div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h2 class="font-headline-sm text-headline-sm text-sm font-semibold truncate">${esc(s.name)}</h2>${badge}</div>
+      <div class="flex items-center gap-2 flex-wrap text-xs text-on-surface-variant mt-0.5">${when1}<span aria-hidden="true">•</span>${who}</div></div>
+    </div>
+    <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+      <div class="text-left sm:text-right">${amt}</div>
+      <div class="flex items-center gap-1.5">${status}${s.trial ? '' : `<button type="button" data-act="remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}" title="Remove" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/50"><span class="material-symbols-outlined text-lg">delete</span></button>`}</div>
+    </div></li>`;
+}
+
+function settleHTML(s) {
+  if (!s) return `<h2 class="font-headline-sm text-headline-sm text-base font-semibold">Active settlement</h2><p class="text-sm text-on-surface-variant">No split subscriptions yet. Add one and pick roommates to track who has paid.</p>`;
+  const m = Object.entries(s.members), sh = share(s);
+  const row = ([name, ok]) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all">
+    <div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full ${ok ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container'} flex items-center justify-center font-bold text-xs shrink-0">${esc(name.slice(0,2).toUpperCase())}</div>
+    <div class="min-w-0"><div class="text-xs font-semibold truncate">${esc(name)}</div><div class="text-[10px] font-label-numeric ${ok ? 'text-outline' : 'text-error'}">${ok ? 'Settled' : 'Owes ' + money(sh)}</div></div></div>
+    <div class="flex items-center gap-1.5">
+      <button type="button" data-act="toggle" data-m="${esc(name)}" aria-pressed="${ok}" class="px-2.5 py-1 rounded text-xs font-label-numeric font-semibold flex items-center gap-1 ${ok ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container'}"><span class="material-symbols-outlined text-xs">${ok ? 'check' : 'schedule'}</span>${money(sh)} ${ok ? 'paid' : 'unpaid'}</button>
+      ${ok ? '' : `<button type="button" data-act="nudge-one" data-m="${esc(name)}" aria-label="Copy payment message for ${esc(name)}" title="Copy payment message" class="p-1 rounded hover:bg-surface-container text-outline hover:text-on-surface"><span class="material-symbols-outlined text-sm">link</span></button>`}
+    </div></div>`;
+  return `<div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span><h2 class="font-headline-sm text-headline-sm text-base font-semibold">Active settlement</h2></div><span class="text-xs font-label-caps uppercase text-outline truncate">${esc(s.name)}</span></div>
+    <div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between"><div><div class="text-xs text-on-surface-variant">Total billed to you</div><div class="font-label-numeric text-base font-bold">${money(s.cost)} <span class="text-xs font-normal text-outline">/mo</span></div></div>
+    <div class="text-right"><div class="text-xs text-on-surface-variant">${m.length + 1} equal shares</div><div class="font-label-numeric text-xs font-semibold text-primary">${money(sh)} per person</div></div></div>
+    <div class="space-y-2.5"><div class="text-xs font-label-caps uppercase text-outline">Roommate breakdown</div>
+    <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low/50"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-primary-container/15 text-primary flex items-center justify-center font-bold text-xs">AC</div><div><div class="text-xs font-semibold">Alex Chen (you)</div><div class="text-[10px] text-outline font-label-numeric">Primary payer</div></div></div><span class="px-2 py-0.5 rounded bg-surface-container text-xs font-label-numeric font-medium">${money(sh)} (paid)</span></div>
+    ${m.map(row).join('')}</div>
+    <button type="button" data-act="copy-ledger" class="w-full py-2 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-medium flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-base">copy_all</span>Copy split ledger</button>`;
+}
+
+function render() {
+  const act = subs.filter(s => !s.trial), trials = subs.filter(s => s.trial);
+  const shared = subs.filter(s => Object.keys(s.members).length);
+  if (!shared.find(s => s.id === sel)) sel = (shared.find(s => Object.values(s.members).includes(false)) || shared[0] || {}).id || null;
+
+  // stats
+  const total = sum(act.map(share));
+  const unpaid = []; subs.forEach(s => Object.entries(s.members).forEach(([m, p]) => { if (!p) unpaid.push({s, m, amt: share(s)}); }));
+  const owed = sum(unpaid.map(u => u.amt)), friends = new Set(unpaid.map(u => u.m)).size;
+  const week = act.map(s => ({s, d: nextDate(s)})).filter(x => inDays(x.d) <= 7).sort((a, b) => a.d - b.d);
+  $('#stat-total').textContent = money(total);
+  $('#stat-active span:last-child').textContent = `${plural(act.length, 'active subscription')}${trials.length ? ` · ${plural(trials.length, 'free trial')}` : ''}`;
+  $('#stat-solo').textContent = money(sum(act.filter(s => !Object.keys(s.members).length).map(share)));
+  $('#stat-split').textContent = money(sum(act.filter(s => Object.keys(s.members).length).map(share)));
+  $('#stat-owed').textContent = money(owed);
+  $('#stat-pending').textContent = unpaid.length ? `${plural(unpaid.length, 'pending share')} from ${plural(friends, 'roommate')}` : 'Everyone is settled up';
+  $('#btn-nudge-all').disabled = !unpaid.length;
+  $('#btn-nudge-all').lastElementChild.textContent = unpaid.length ? `Copy reminder (${unpaid.length})` : 'Copy reminder';
+  $('#stat-week').textContent = money(sum(week.map(x => share(x.s))));
+  $('#stat-week-n').textContent = `${plural(week.length, 'automated charge')} queued`;
+  $('#week-list').innerHTML = week.slice(0, 3).map(({s, d}) => `<div class="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-surface-container-low"><span class="font-medium truncate">${esc(s.name)}</span><span class="font-label-numeric font-semibold shrink-0">${fmtDate(d)} • ${money(share(s))}</span></div>`).join('') || '<p class="text-xs text-outline">Nothing due this week.</p>';
+  $('#hdr-active').textContent = `${act.length} active`;
+
+  // banner
+  const ending = trials.map(s => ({s, d: inDays(parse(s.date))})).filter(x => x.d <= 7).sort((a, b) => a.d - b.d);
+  const alerts = ending.length + unpaid.length;
+  $('#bell-count').textContent = alerts; $('#bell-count').classList.toggle('hidden', !alerts); $('#bell-count').classList.toggle('flex', !!alerts);
+  $('#banner').innerHTML = ending.length && !bannerOff ? `<div class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-4"><div role="alert" class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-sm p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="absolute left-0 inset-y-0 w-1.5 bg-tertiary"></div>
+    <div class="flex items-start sm:items-center gap-3 pl-2"><div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-tertiary"><span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">warning</span></div>
+    <div><div class="flex items-center gap-2 flex-wrap"><span class="text-body-sm font-semibold uppercase tracking-wider text-on-tertiary-fixed-variant bg-tertiary-fixed px-2 py-0.5 rounded-full">Trial ending</span><span class="font-headline-sm text-headline-sm text-sm sm:text-base">Action required: <span class="font-semibold text-primary">${ending.map(x => esc(x.s.name.replace(/ Trial$/, ''))).join(' & ')}</span></span></div>
+    <p class="text-body-sm text-on-surface-variant mt-0.5">${ending.length > 1 ? 'Free trials end' : 'The free trial ends'} <strong class="text-tertiary font-semibold">${when(ending[0].d)} (${fmtDate(parse(ending[0].s.date))})</strong>. Auto-renewal will charge <span class="font-label-numeric font-semibold text-on-surface">${money(sum(ending.map(x => x.s.cost)))}/mo</span>.</p></div></div>
+    <div class="flex items-center gap-2 self-end md:self-center shrink-0"><button type="button" data-act="review" class="px-3.5 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-body-sm font-medium shadow-sm flex items-center gap-1.5">Review & cancel<span class="material-symbols-outlined text-sm">arrow_forward</span></button>
+    <button type="button" data-act="dismiss" aria-label="Dismiss banner" class="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-lg">close</span></button></div></div></div>` : '';
+
+  // nav
+  const navHTML = NAV.map(([id, label]) => `<a href="#" data-act="nav" data-page="${id}" ${id === page ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${id === page ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${label}</a>`).join('');
+  $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
+
+  // tabs
+  const tabs = [['all', 'All subscriptions', subs.length], ['splits', 'Group splits', shared.length], ['trials', 'Free trials', trials.length]];
+  $('#tabs').innerHTML = tabs.map(([id, label, n]) => `<button type="button" data-act="tab" data-tab="${id}" aria-pressed="${tab === id}" class="px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${tab === id ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}">${label}<span class="px-1.5 rounded-full text-[10px] font-label-numeric ${tab === id ? 'bg-primary-container text-on-primary' : 'bg-surface-container text-on-surface'}">${n}</span></button>`).join('');
+
+  // list
+  const term = q.trim().toLowerCase();
+  const rows = subs.filter(s => (tab === 'all' || (tab === 'splits' ? Object.keys(s.members).length : s.trial)) && (cat === 'all' || s.cat === cat) && (!term || (s.name + ' ' + (CATS[s.cat]?.[0] || '')).toLowerCase().includes(term)))
+    .sort((a, b) => nextDate(a) - nextDate(b));
+  $('#subs').innerHTML = rows.map(itemHTML).join('') || `<li class="rounded-xl bg-surface-container-lowest p-8 text-center text-sm text-on-surface-variant">No subscriptions match these filters.</li>`;
+
+  // settlement + categories
+  $('#settle').innerHTML = settleHTML(subs.find(s => s.id === sel));
+  const byCat = Object.keys(CATS).map(k => [k, sum(act.filter(s => s.cat === k).map(share))]).filter(x => x[1] > 0);
+  $('#cat-total').textContent = money(total);
+  $('#cat-bar').innerHTML = byCat.map(([k, v]) => `<div class="h-full ${CATS[k][1]}" style="width:${v / total * 100}%" title="${CATS[k][0]}"></div>`).join('');
+  $('#cat-legend').innerHTML = byCat.map(([k, v]) => `<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${CATS[k][1]} shrink-0"></span><span>${CATS[k][0]}: <strong class="text-on-surface font-label-numeric">${money(v)}</strong></span></div>`).join('');
+}
+
+// ---------- modal ----------
+function calc() {
+  const v = parseFloat($('#f-cost').value) || 0, n = 1 + picked.size;
+  $('#split-calc').textContent = n > 1 ? `${n} people: ${money(v / n)} each` : `Solo: ${money(v)}/mo`;
+}
+function chips() {
+  $('#chips').innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-on-primary shadow-sm">✓ Alex (you)</span>` +
+    ROOMMATES.map(n => `<button type="button" data-act="chip" data-m="${n}" aria-pressed="${picked.has(n)}" class="px-2.5 py-1 rounded-full text-xs font-medium ${picked.has(n) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container'}">${picked.has(n) ? '✓' : '+'} ${n}</button>`).join('');
+  calc();
+}
+function setTrial(on) {
+  $('#trial-panel').classList.toggle('hidden', !on);
+  $('#wrap-date').classList.toggle('hidden', on);
+  $('#f-date').required = !on; $('#f-trial-date').required = on;
+  if (on && !$('#f-trial-date').value) $('#f-trial-date').value = plus(14);
+}
+function openModal() {
+  lastFocus = document.activeElement;
+  $('#form').reset(); picked = new Set(); setTrial(false); chips();
+  $('#f-date').value = plus(30); $('#f-date').min = $('#f-trial-date').min = plus(0);
+  const m = $('#modal'); m.inert = false; m.setAttribute('aria-hidden', 'false');
+  m.classList.remove('opacity-0', 'pointer-events-none'); $('#modal-box').classList.replace('scale-95', 'scale-100');
+  setTimeout(() => $('#f-name').focus(), 50);
+}
+function closeModal() {
+  const m = $('#modal'); m.inert = true; m.setAttribute('aria-hidden', 'true');
+  m.classList.add('opacity-0', 'pointer-events-none'); $('#modal-box').classList.replace('scale-100', 'scale-95');
+  lastFocus && lastFocus.focus && lastFocus.focus();
+}
+const modalOpen = () => !$('#modal').inert;
+
+$('#form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#f-name').value.trim(), cost = parseFloat($('#f-cost').value), trial = $('#f-trial').checked;
+  if (!name || !(cost > 0)) return;
+  subs.push({id: Date.now().toString(36), name, cat: $('#f-cat').value, cost, trial, date: trial ? $('#f-trial-date').value : $('#f-date').value, members: Object.fromEntries([...picked].map(n => [n, false]))});
+  save(); closeModal(); tab = 'all'; cat = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = ''); $('#cat-filter').value = 'all'; render();
+  toast(`Added "${name}"`);
+});
+$('#f-trial').addEventListener('change', e => setTrial(e.target.checked));
+$('#f-cost').addEventListener('input', calc);
+
+// ---------- events ----------
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (el) {
+    const act = el.dataset.act, id = el.dataset.id, name = el.dataset.m, s = subs.find(x => x.id === (id || sel));
+    const unpaid = [];
+    subs.forEach(x => Object.entries(x.members).forEach(([m, p]) => { if (!p) unpaid.push({x, m}); }));
+    if (act === 'nav' || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
+    switch (act) {
+      case 'open': openModal(); break;
+      case 'close': closeModal(); break;
+      case 'menu': { const n = $('#nav-m'); n.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !n.classList.contains('hidden')); break; }
+      case 'nav':
+        if (el.dataset.page === 'settings') toast('Settings page is not built yet.', 'settings');
+        else { page = el.dataset.page; if (page === 'dashboard') { tab = 'all'; window.scrollTo({top: 0}); } else if (page === 'group-splits') { tab = 'splits'; render(); $('#list').scrollIntoView(); } else $('#analytics').scrollIntoView(); }
+        $('#nav-m').classList.add('hidden'); $('#btn-menu').setAttribute('aria-expanded', 'false'); render(); break;
+      case 'bell': { const t = subs.filter(x => x.trial && inDays(parse(x.date)) <= 7).length; toast(`${plural(t, 'trial')} ending soon · ${plural(unpaid.length, 'unpaid share')}`, 'notifications'); break; }
+      case 'dismiss': bannerOff = true; render(); break;
+      case 'review': tab = 'trials'; render(); $('#list').scrollIntoView(); break;
+      case 'tab': tab = el.dataset.tab; render(); break;
+      case 'inspect': sel = id; render(); if (innerWidth < 1024) $('#settle').scrollIntoView({block: 'nearest'}); break;
+      case 'remove': if (s && confirm(`${s.trial ? 'Cancel' : 'Remove'} "${s.name}"?`)) { subs = subs.filter(x => x !== s); save(); render(); toast(s.trial ? `Cancelled "${s.name}"` : `Removed "${s.name}"`, 'delete'); } break;
+      case 'toggle': if (s) { s.members[name] = !s.members[name]; save(); render(); toast(s.members[name] ? `${name} marked as settled` : `${name} marked as unpaid`, s.members[name] ? 'check_circle' : 'schedule'); } break;
+      case 'chip': picked.has(name) ? picked.delete(name) : picked.add(name); chips(); break;
+      case 'nudge-one': if (s) copy(`Hey ${name}, here's the link to settle your ${money(share(s))} share for ${s.name}: ${PAY_LINK}`, `Copied payment message for ${name}`); break;
+      case 'nudge-all': if (unpaid.length) copy('SubSplit reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x))} for ${u.x.name}`).join('\n') + `\nPay here: ${PAY_LINK}`, `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;
+      case 'copy-pay': copy(PAY_LINK, 'Payment link copied'); break;
+      case 'copy-ledger': if (s) copy(`${s.name} (${money(s.cost)}/mo) · ${money(share(s))} per person\nAlex Chen: Paid\n` + Object.entries(s.members).map(([m, p]) => `${m}: ${p ? 'Paid' : money(share(s)) + ' due'}`).join('\n') + `\nPay here: ${PAY_LINK}`, 'Split ledger copied'); break;
+    }
+    return;
+  }
+  if (e.target === $('#modal')) closeModal();
+});
+$('#cat-filter').addEventListener('change', e => { cat = e.target.value; render(); });
+$$('[data-search]').forEach(inp => inp.addEventListener('input', () => { q = inp.value; $$('[data-search]').forEach(o => o.value = q); render(); }));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && modalOpen()) closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); const i = $$('[data-search]').find(x => x.offsetParent); i && i.focus(); }
+});
+
+// ---------- init ----------
+const catOpts = Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('');
+$('#cat-filter').innerHTML = `<option value="all">All categories</option>` + catOpts;
+$('#f-cat').innerHTML = catOpts;
+$('#yr').textContent = new Date().getFullYear();
+render();
+})();
+</script>
+</body>
+</html>

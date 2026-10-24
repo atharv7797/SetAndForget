@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SubSplit – Group Splits</title>
+<title>SetAndForget – Group Splits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
@@ -31,7 +31,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
       <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
       <div class="flex items-center gap-2.5">
         <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
-        <span class="font-headline-sm text-headline-sm font-bold">SubSplit</span>
+        <span class="font-headline-sm text-headline-sm font-bold">SetAndForget</span>
         <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
       </div>
       <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
@@ -155,7 +155,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 
 <footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
   <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
-    <div>© <span id="yr"></span> SubSplit Technologies Inc. All rights reserved.</div>
+    <div>© <span id="yr"></span> SetAndForget Technologies Inc. All rights reserved.</div>
     <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
   </div>
 </footer>
@@ -163,7 +163,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 <script>
 (() => {
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const ME = 'Alex', KEY = 'subsplit.groups.v1', DAY = 864e5;
+const ME = 'Alex', KEY = 'SetAndForget.groups.v1', DAY = 864e5;
 const TONES = ['bg-primary-container/15 text-primary','bg-secondary-container text-on-secondary-container','bg-tertiary-fixed text-on-tertiary-fixed-variant','bg-error-container text-on-error-container','bg-surface-container-high text-on-surface-variant'];
 const BARS = ['bg-primary-container','bg-secondary','bg-tertiary','bg-outline','bg-surface-dim'];
 
@@ -279,7 +279,7 @@ function render() {
   $('#yr').textContent = now.getFullYear();
 
   // nav
-  const nav = [['Dashboard', 'subsplit-dashboard.html'], ['Group Splits', '#'], ['Analytics', 'subsplit-dashboard.html#analytics'], ['Settings', '#config']];
+  const nav = [['Dashboard', 'dashboard.html'], ['Group Splits', '#'], ['Analytics', 'dashboard.html#analytics'], ['Settings', '#config']];
   const navHTML = nav.map(([l, h]) => `<a href="${h}" ${l === 'Group Splits' ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Group Splits' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
   $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
 
@@ -394,7 +394,7 @@ document.addEventListener('click', e => {
     case 'chip': bill.has(m) ? bill.delete(m) : bill.add(m); billChips(); break;
     case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) { g.subs = g.subs.filter(x => x !== s); save(); render(); toast(`Removed "${s.name}"`, 'delete'); } break;
     case 'ping': if (s) { const o = owingOf(s); copy(`Hi ${o.map(x => x[0]).join(' & ')}, your ${money(share(s))} share for ${s.name} is due. Pay ${data.settings.venmo} on Venmo or ${data.settings.zelle} on Zelle.`, 'Reminder copied. Paste it in your group chat.'); log(g, {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'}); save(); render(); } break;
-    case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SubSplit reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + `\nPay: ${data.settings.venmo} (Venmo) or ${data.settings.zelle} (Zelle)`, 'Reminder copied. Paste it in your group chat.'); break; }
+    case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SetAndForget reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + `\nPay: ${data.settings.venmo} (Venmo) or ${data.settings.zelle} (Zelle)`, 'Reminder copied. Paste it in your group chat.'); break; }
     case 'nudge': { const mine = dl.filter(x => x.from === m && x.to === ME); copy(`Hey ${m}, you owe ${money(sum(mine.map(x => x.amt)))} (${mine.map(x => x.s.name).join(', ')}). Pay ${data.settings.venmo} on Venmo or ${data.settings.zelle} on Zelle.`, `Payment request for ${m} copied`); break; }
     case 'mark': {
       let from = m, to = ME, hit = dl.filter(x => x.from === m && x.to === ME);

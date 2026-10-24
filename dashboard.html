@@ -337,7 +337,7 @@ function render() {
     <button type="button" data-act="dismiss" aria-label="Dismiss banner" class="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container"><span class="material-symbols-outlined text-lg">close</span></button></div></div></div>` : '';
 
   // nav
-  const navHTML = NAV.map(([id, label]) => `<a href="${id === 'group-splits' ? 'groupsplits.html' : '#'}" data-act="nav" data-page="${id}" ${id === page ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${id === page ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${label}</a>`).join('');
+  const navHTML = NAV.map(([id, label]) => `<a href="${id === 'group-splits' ? 'groupsplits.html' : id === 'analytics' ? 'analyze.html' : '#'}" data-act="nav" data-page="${id}" ${id === page ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${id === page ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${label}</a>`).join('');
   $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
 
   // tabs
@@ -413,7 +413,10 @@ document.addEventListener('click', e => {
       case 'menu': { const n = $('#nav-m'); n.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !n.classList.contains('hidden')); break; }
       case 'nav':
         if (el.dataset.page === 'settings') toast('Settings page is not built yet.', 'settings');
-        else { page = el.dataset.page; if (page === 'dashboard') { tab = 'all'; window.scrollTo({top: 0}); } else if (page === 'group-splits') { tab = 'splits'; render(); $('#list').scrollIntoView(); } else $('#analytics').scrollIntoView(); }
+        else { page = el.dataset.page; if (page === 'dashboard') { tab = 'all'; window.scrollTo({top: 0}); } else if (page === 'group-splits') { tab = 'splits'; render(); $('#list').scrollIntoView(); } else if (page === 'analytics') {
+  window.location.href = 'analytics.html';
+  return;
+} }
         $('#nav-m').classList.add('hidden'); $('#btn-menu').setAttribute('aria-expanded', 'false'); render(); break;
       case 'bell': { const t = subs.filter(x => x.trial && inDays(parse(x.date)) <= 7).length; toast(`${plural(t, 'trial')} ending soon · ${plural(unpaid.length, 'unpaid share')}`, 'notifications'); break; }
       case 'dismiss': bannerOff = true; render(); break;

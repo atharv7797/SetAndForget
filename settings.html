@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SetAndForget – Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+<style>
+html{scroll-behavior:smooth}body{overscroll-behavior:none}
+section[id]{scroll-margin-top:88px}
+:focus-visible{outline:2px solid #5046e5;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+colors:{"surface":"#f8f9ff","surface-dim":"#cbdbf5","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","surface-container":"#e5eeff","surface-container-high":"#dce9ff","on-surface":"#0b1c30","on-surface-variant":"#464555","outline":"#777587","primary":"#3625cd","primary-container":"#5046e5","on-primary":"#ffffff","secondary":"#006c49","secondary-container":"#6cf8bb","on-secondary-container":"#00714d","secondary-fixed":"#6ffbbe","on-secondary-fixed":"#002113","tertiary":"#684000","tertiary-fixed":"#ffddb8","on-tertiary-fixed-variant":"#653e00","error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a","inverse-surface":"#213145","inverse-on-surface":"#eaf1ff"},
+fontFamily:{"headline-xl":["Geist","Inter","sans-serif"],"headline-lg":["Geist","Inter","sans-serif"],"headline-md":["Geist","Inter","sans-serif"],"headline-sm":["Geist","Inter","sans-serif"],"body-md":["Inter","sans-serif"],"body-sm":["Inter","sans-serif"],"label-caps":["Inter","sans-serif"],"label-numeric":["JetBrains Mono","monospace"]},
+fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontWeight:"600"}],"headline-lg":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["22px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px"}],"body-sm":["12px",{lineHeight:"16px"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}],"label-numeric":["13px",{lineHeight:"16px",letterSpacing:"-0.02em",fontWeight:"500"}]}
+}}}
+</script>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+
+<header class="fixed top-0 inset-x-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,.04)]">
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 sm:gap-8 min-w-0">
+      <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
+        <span class="font-headline-sm text-headline-sm font-bold">SetAndForget</span>
+        <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
+      </div>
+      <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a href="dashboard.html" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm transition-all"><span class="material-symbols-outlined text-base">add</span>Add subscription</a>
+      <div class="flex items-center gap-2 pl-1">
+        <span id="hdr-ini" class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">AC</span>
+        <div class="hidden lg:flex flex-col leading-none"><span id="hdr-name" class="text-body-sm font-semibold">Alex Chen</span><span class="font-label-numeric text-[11px] text-outline">Settings</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="nav-m" class="hidden xl:hidden border-t border-surface-container bg-surface-container-lowest px-4 py-2"></div>
+</header>
+
+<main class="w-full pt-16 min-h-screen">
+  <div id="toasts" class="fixed bottom-6 right-4 sm:right-6 z-[70] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div><h1 class="font-headline-lg text-headline-lg">Settings</h1><p class="text-body-sm text-on-surface-variant">Changes save automatically on this device</p></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Section nav -->
+      <aside class="lg:col-span-3 lg:sticky lg:top-24">
+        <div class="tabs flex lg:flex-col gap-1 p-1.5 rounded-xl bg-surface-container-lowest shadow-sm overflow-x-auto" id="sec-nav"></div>
+      </aside>
+
+      <div class="lg:col-span-9 space-y-6">
+        <!-- Profile -->
+        <section id="profile" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
+          <div><h2 class="font-headline-sm text-headline-sm">Profile</h2><p class="text-body-sm text-outline">Shown in the header and in messages you copy to roommates</p></div>
+          <div class="flex items-center gap-4"><span id="p-ini" class="w-14 h-14 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-lg font-bold">AC</span><div><div id="p-name" class="text-sm font-semibold"></div><div id="p-email" class="text-xs text-outline"></div></div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label for="s-name" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Full name</label><input id="s-name" data-k="name" maxlength="60" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+            <div><label for="s-email" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Email</label><input id="s-email" data-k="email" type="email" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+          </div>
+        </section>
+
+        <!-- Payments -->
+        <section id="payments" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
+          <div><h2 class="font-headline-sm text-headline-sm">Payments</h2><p class="text-body-sm text-outline">Used in reminders and payment links your roommates receive</p></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label for="s-venmo" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Venmo handle</label><input id="s-venmo" data-k="venmo" placeholder="@yourname" class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+            <div><label for="s-zelle" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Zelle email or phone</label><input id="s-zelle" data-k="zelle" class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+            <div class="sm:col-span-2"><label for="s-link" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Payment link</label><input id="s-link" data-k="payLink" type="url" placeholder="https://" class="w-full px-3 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"></div>
+          </div>
+          <div id="t-auto"></div>
+        </section>
+
+        <!-- Notifications -->
+        <section id="notifications" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-4">
+          <div><h2 class="font-headline-sm text-headline-sm">Notifications</h2><p class="text-body-sm text-outline">Controls the bell count and alert banners</p></div>
+          <div id="t-notif" class="space-y-3"></div>
+          <div class="flex items-center justify-between gap-4 p-3 rounded-xl bg-surface-container-low">
+            <label for="s-days" class="text-xs"><span class="block font-semibold">Warn me before a trial ends</span><span class="block text-[11px] text-outline">Days of notice</span></label>
+            <select id="s-days" data-k="trialDays" data-num class="px-3 py-1.5 bg-surface-container-lowest rounded-lg text-xs font-label-numeric focus:outline-none focus:ring-2 focus:ring-primary-container"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option></select>
+          </div>
+        </section>
+
+        <!-- Preferences -->
+        <section id="preferences" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
+          <div><h2 class="font-headline-sm text-headline-sm">Preferences</h2><p class="text-body-sm text-outline">Defaults used when you add a subscription</p></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label for="s-cur" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Currency</label><select id="s-cur" data-k="currency" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"><option value="USD">US Dollar ($)</option><option value="EUR">Euro (€)</option><option value="GBP">British Pound (£)</option><option value="INR">Indian Rupee (₹)</option></select></div>
+            <div><label for="s-cat" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Default category</label><select id="s-cat" data-k="defCat" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"><option>Streaming</option><option>Software</option><option>AI Tools</option><option>Cloud</option><option>Utilities</option></select></div>
+          </div>
+        </section>
+
+        <!-- Roommates -->
+        <section id="roommates" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-4">
+          <div><h2 class="font-headline-sm text-headline-sm">Roommates</h2><p class="text-body-sm text-outline">People you can pick when splitting a subscription</p></div>
+          <div id="rm-list" class="flex flex-wrap gap-2"></div>
+          <form id="rm-form" class="flex items-center gap-2">
+            <label class="sr-only" for="rm-name">Roommate name</label>
+            <input id="rm-name" maxlength="30" placeholder="Add a roommate…" class="flex-1 max-w-xs px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold shadow-sm flex items-center gap-1.5"><span class="material-symbols-outlined text-base">add</span>Add</button>
+          </form>
+        </section>
+
+        <!-- Data -->
+        <section id="data" class="rounded-xl bg-surface-container-lowest p-6 shadow-sm space-y-4">
+          <div><h2 class="font-headline-sm text-headline-sm">Your data</h2><p class="text-body-sm text-outline">Everything is stored in this browser. Back it up or start fresh.</p></div>
+          <div class="flex flex-wrap gap-2.5">
+            <button type="button" data-act="export" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-base">download</span>Export backup</button>
+            <button type="button" data-act="import" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-base">upload</span>Import backup</button>
+            <input id="file" type="file" accept="application/json,.json" class="hidden">
+          </div>
+          <div class="p-4 rounded-xl bg-error-container/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="text-xs"><div class="font-semibold text-on-error-container">Reset all data</div><div class="text-on-surface-variant">Deletes subscriptions, groups and settings, then restores the sample data.</div></div>
+            <button type="button" data-act="reset" class="px-4 py-2 rounded-lg bg-error-container text-on-error-container hover:bg-error hover:text-on-error text-body-sm font-semibold transition-all shrink-0">Reset everything</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
+    <div>© <span id="yr"></span> SetAndForget Technologies Inc. All rights reserved.</div>
+    <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const SKEY = 'SetAndForget.settings.v1', KEYS = ['SetAndForget.v2', 'SetAndForget.groups.v1', SKEY];
+const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','analytics.html'],['Settings','#']];
+const SECS = [['profile','person','Profile'],['payments','payments','Payments'],['notifications','notifications','Notifications'],['preferences','tune','Preferences'],['roommates','group','Roommates'],['data','database','Your data']];
+const DEF = {name:'Alex Chen', email:'alex@chen.me', venmo:'@alexchen-split', zelle:'alex@chen.me', payLink:'https://venmo.com/u/AlexChenSetAndForget', auto:true, trialAlert:true, unpaidAlert:true, digest:false, trialDays:7, currency:'USD', defCat:'Streaming', roommates:['Marcus','Sarah','David']};
+const TOGGLES = {
+  auto: ['Auto-clear balances', 'Offset what roommates owe each other before asking for payment'],
+  trialAlert: ['Free trial alerts', 'Banner and bell badge when a trial is about to convert'],
+  unpaidAlert: ['Unpaid share alerts', 'Count unsettled roommate shares in the bell badge'],
+  digest: ['Weekly summary', 'A recap of spend and open balances every Monday']
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S; try { S = {...DEF, ...JSON.parse(localStorage.getItem(SKEY))}; } catch { S = {...DEF}; }
+
+function toast(msg, icon = 'check_circle') {
+  const t = document.createElement('div');
+  t.className = 'pointer-events-auto bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs transition-all duration-300 translate-y-4 opacity-0';
+  t.innerHTML = `<span class="material-symbols-outlined text-sm text-secondary-fixed">${icon}</span><span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.remove('translate-y-4', 'opacity-0'));
+  setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => t.remove(), 300); }, 2600);
+}
+function save(msg = 'Settings saved') {
+  try {
+    localStorage.setItem(SKEY, JSON.stringify(S));
+    const g = JSON.parse(localStorage.getItem('SetAndForget.groups.v1'));  // keep Group Splits in sync
+    if (g && Array.isArray(g.groups)) { g.settings = {...g.settings, venmo: S.venmo, zelle: S.zelle, auto: S.auto}; localStorage.setItem('SetAndForget.groups.v1', JSON.stringify(g)); }
+  } catch {}
+  paint(); toast(msg);
+}
+const ini = n => (n.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+
+const toggle = (k, [h, d]) => `<label class="flex items-center justify-between gap-4 p-3 rounded-xl bg-surface-container-low cursor-pointer"><span class="text-xs"><span class="block font-semibold">${h}</span><span class="block text-[11px] text-outline">${d}</span></span>
+  <span class="relative inline-flex shrink-0"><input type="checkbox" data-k="${k}" class="peer sr-only"><span class="block w-10 h-6 rounded-full bg-surface-container-high peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container peer-focus-visible:ring-offset-2 transition-all after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all peer-checked:after:translate-x-4"></span></span></label>`;
+
+function paint() {
+  $('#hdr-name').textContent = S.name || 'Your name'; $('#hdr-ini').textContent = ini(S.name || '');
+  $('#p-ini').textContent = ini(S.name || ''); $('#p-name').textContent = S.name; $('#p-email').textContent = S.email;
+  $('#rm-list').innerHTML = S.roommates.map((n, i) => `<span class="flex items-center gap-2 pl-3 pr-1.5 py-1 rounded-full bg-surface-container-low text-xs font-medium"><span class="w-5 h-5 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-[9px] font-bold">${esc(ini(n))}</span>${esc(n)}<button type="button" data-act="rm" data-i="${i}" aria-label="Remove ${esc(n)}" class="p-0.5 rounded-full text-outline hover:text-error hover:bg-error-container/50"><span class="material-symbols-outlined text-sm">close</span></button></span>`).join('') || '<p class="text-xs text-outline">No roommates yet.</p>';
+}
+function init() {
+  $('#t-auto').innerHTML = toggle('auto', TOGGLES.auto);
+  $('#t-notif').innerHTML = ['trialAlert', 'unpaidAlert', 'digest'].map(k => toggle(k, TOGGLES[k])).join('');
+  $$('[data-k]').forEach(el => { const v = S[el.dataset.k]; el.type === 'checkbox' ? el.checked = !!v : el.value = v ?? ''; });
+  $('#sec-nav').innerHTML = SECS.map(([id, ic, l]) => `<a href="#${id}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all"><span class="material-symbols-outlined text-lg">${ic}</span>${l}</a>`).join('');
+  const nav = NAV.map(([l, h]) => `<a href="${h}" ${l === 'Settings' ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Settings' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
+  $('#nav').innerHTML = nav; $('#nav-m').innerHTML = nav;
+  $('#yr').textContent = new Date().getFullYear(); paint();
+}
+
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-k]'); if (!el) return;
+  const k = el.dataset.k;
+  if (el.type === 'checkbox') S[k] = el.checked;
+  else {
+    const v = el.value.trim();
+    if (k === 'name' && !v) { el.value = S.name; return toast('Name can\'t be empty', 'error'); }
+    if (k === 'email' && v && !el.checkValidity()) return toast('Enter a valid email address', 'error');
+    if (k === 'payLink' && v && !el.checkValidity()) return toast('Payment link must start with https://', 'error');
+    S[k] = el.hasAttribute('data-num') ? +v : v;
+  }
+  save();
+});
+$('#rm-form').addEventListener('submit', e => {
+  e.preventDefault(); const n = $('#rm-name').value.trim(); if (!n) return;
+  if (S.roommates.some(x => x.toLowerCase() === n.toLowerCase())) return toast(`${n} is already on the list`, 'error');
+  S.roommates.push(n); $('#rm-name').value = ''; save(`Added ${n}`);
+});
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); if (!d || typeof d !== 'object' || d.app !== 'SetAndForget') throw 0;
+    KEYS.forEach(k => d.data[k] == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(d.data[k])));
+    toast('Backup restored'); setTimeout(() => location.reload(), 700);
+  } catch { toast('That file isn\'t a SetAndForget backup', 'error'); }
+});
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  switch (el.dataset.act) {
+    case 'menu': { const m = $('#nav-m'); m.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !m.classList.contains('hidden')); break; }
+    case 'rm': { const n = S.roommates[+el.dataset.i]; S.roommates.splice(+el.dataset.i, 1); save(`Removed ${n}`); break; }
+    case 'import': $('#file').click(); break;
+    case 'export': {
+      const data = {}; KEYS.forEach(k => { try { data[k] = JSON.parse(localStorage.getItem(k)); } catch { data[k] = null; } });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({app:'SetAndForget', exported:new Date().toISOString(), data}, null, 2)], {type:'application/json'}));
+      a.download = `setandforget-backup-${new Date().toLocaleDateString('sv')}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Backup downloaded', 'download'); break; }
+    case 'reset': if (confirm('Delete all subscriptions, groups and settings? This can\'t be undone.')) { KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} }); toast('Everything was reset', 'delete'); setTimeout(() => location.reload(), 700); } break;
+  }
+});
+init();
+})();
+</script>
+</body>
+</html>

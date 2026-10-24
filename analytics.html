@@ -159,7 +159,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 const $ = s => document.querySelector(s);
 const KEY = 'SetAndForget.v2', GKEY = 'SetAndForget.groups.v1', DAY = 864e5;
 const CATS = {Streaming:['Streaming','bg-secondary','#006c49'], Software:['Software & Productivity','bg-primary','#3625cd'], 'AI Tools':['AI Tools','bg-tertiary','#684000'], Cloud:['Cloud Storage','bg-outline','#777587'], Utilities:['Utilities & Wifi','bg-inverse-surface','#213145']};
-const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','#'],['Settings','#settings']];
+const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','#'],['Settings','settings.html']];
 
 // ---------- helpers ----------
 const r2 = n => Math.round(n * 100) / 100, money = n => '$' + r2(n).toFixed(2), sum = a => a.reduce((x, y) => x + y, 0);
@@ -302,7 +302,7 @@ function render() {
 
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-nav]');
-  if (n && n.dataset.nav === 'Settings') { e.preventDefault(); toast('Settings page is not built yet.', 'settings'); return; }
+  
   if (n && n.dataset.nav === 'Analytics') { e.preventDefault(); window.scrollTo({top: 0}); return; }
   const el = e.target.closest('[data-act]'); if (!el) return;
   if (el.dataset.act === 'menu') { const m = $('#nav-m'); m.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !m.classList.contains('hidden')); }

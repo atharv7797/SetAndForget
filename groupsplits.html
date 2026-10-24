@@ -279,7 +279,7 @@ function render() {
   $('#yr').textContent = now.getFullYear();
 
   // nav
-  const nav = [['Dashboard', 'dashboard.html'], ['Group Splits', '#'], ['Analytics', 'analytics.html'], ['Settings', '#config']];
+  const nav = [['Dashboard', 'dashboard.html'], ['Group Splits', '#'], ['Analytics', 'analytics.html'], ['Settings', 'settings.html']];
   const navHTML = nav.map(([l, h]) => `<a href="${h}" ${l === 'Group Splits' ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Group Splits' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
   $('#nav').innerHTML = navHTML; $('#nav-m').innerHTML = navHTML;
 

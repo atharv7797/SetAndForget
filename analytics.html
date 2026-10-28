@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="icons-pending">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +11,7 @@
 html{scroll-behavior:smooth}body{overscroll-behavior:none}
 :focus-visible{outline:2px solid #5046e5;outline-offset:2px}
 .bar{transition:height .5s ease,width .5s ease}
+.icons-pending .material-symbols-outlined{display:inline-block;width:1em;overflow:hidden;white-space:nowrap;color:transparent!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -159,7 +160,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 const $ = s => document.querySelector(s);
 const KEY = 'SetAndForget.v2', GKEY = 'SetAndForget.groups.v1', SETTINGS_KEY = 'SetAndForget.settings', DAY = 864e5;
 const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', defaultCategory:'Streaming', roommates:['Marcus','Sarah','David'], trialAlerts:true, unpaidAlerts:true, trialDays:7, unpaidDays:7, weeklySummary:false, autoClearBalances:false, dueSoonAlerts:true};
-function readSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
+function readSettings(){ let raw={}; for(const k of ['SetAndForget.profile','SetAndForget.settings.v1',SETTINGS_KEY]){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
 let settings = readSettings();
 const CATS = {Streaming:['Streaming','bg-secondary','#006c49'], Software:['Software & Productivity','bg-primary','#3625cd'], 'AI Tools':['AI Tools','bg-tertiary','#684000'], Cloud:['Cloud Storage','bg-outline','#777587'], Utilities:['Utilities & Wifi','bg-inverse-surface','#213145'], Other:['Other','bg-surface-dim','#cbdbf5']};
 const catOf = s => CATS[s.cat] ? s.cat : 'Other';
@@ -176,7 +177,15 @@ const parse = s => new Date(s + 'T00:00');
 const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
 const inDays = d => Math.round((d - today()) / DAY);
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
-const nextDate = s => { const d = parse(s.date); if (!s.trial) while (d < today()) d.setMonth(d.getMonth() + 1); return d; };
+// Month-end safe: Jan 31 -> Feb 28 -> Mar 31 when the original billing day is kept.
+const addMonth = (d, day = d.getDate()) => { const r = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  r.setDate(Math.min(day, new Date(r.getFullYear(), r.getMonth()+1, 0).getDate())); return r; };
+const validDay = v => Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 31;
+const nextDate = s => { let d = parse(s.date), guard = 0; if (!s.trial) { const day = validDay(s.billDay) ? Number(s.billDay) : d.getDate(); while (d < today() && guard++ < 240) d = addMonth(d, day); } return d; };
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+// Drop malformed entries (e.g. from a bad import) so the page never shows Invalid Date / NaN.
+const sanitize = list => list.filter(s => s && typeof s === 'object' && typeof s.date === 'string' && DATE_RE.test(s.date) && !Number.isNaN(parse(s.date).getTime())
+  && Number.isFinite(Number(s.cost)) && Number(s.cost) > 0).map(s => { s.cost = Number(s.cost); s.name = String(s.name || 'Untitled'); return s; });
 const PLACEHOLDER_NAME = 'Your account';
 const cleanName = v => { const n = String(v || '').trim(); return n === PLACEHOLDER_NAME ? '' : n; };
 const trialEnd = s => parse(s.trialEndDate || s.date);
@@ -204,11 +213,11 @@ const seedGroups = () => ({active:'g1', groups:[
 let subs = [], gd = null;
 function reloadData(){
   settings = readSettings();
-  try { const fresh = JSON.parse(localStorage.getItem(KEY)||'null'); if(Array.isArray(fresh)) subs=fresh; else subs=seedSubs(); } catch { if(!Array.isArray(subs)) subs=seedSubs(); }
+  try { const fresh = JSON.parse(localStorage.getItem(KEY)||'null'); if(Array.isArray(fresh)) subs=sanitize(fresh); else subs=seedSubs(); } catch { if(!Array.isArray(subs)) subs=seedSubs(); }
   try { const fresh = JSON.parse(localStorage.getItem(GKEY)||'null'); if(fresh && Array.isArray(fresh.groups)) gd=fresh; else if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); } catch { if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); }
   // Expired trials become active once, and the updated state is persisted.
   let changed=false; const now=today();
-  subs.forEach(s=>{ if(s && s.trial){ const endValue=s.trialEndDate || s.date; const end=endValue ? parse(endValue) : null; if(end && !Number.isNaN(end.getTime()) && end <= now){ s.trial=false; if(s.trialEndDate) s.date=s.trialEndDate; changed=true; } } });
+  subs.forEach(s=>{ if(s && s.trial){ const endValue=s.trialEndDate || s.date; const end=endValue ? parse(endValue) : null; if(end && !Number.isNaN(end.getTime()) && end < now){ s.trial=false; if(s.trialEndDate) s.date=s.trialEndDate; s.billDay=parse(s.date).getDate(); changed=true; } } });
   if(changed){ try{localStorage.setItem(KEY,JSON.stringify(subs));}catch{} }
 }
 reloadData();
@@ -233,7 +242,7 @@ function render() {
   const total = sum(act.map(share)), gross = sum(act.map(s => s.cost)), saved = gross - total;
   const unpaid = []; let paidAmt = 0, paidN = 0;
   // An unpaid share is counted once per missed month, the same rule Group Splits uses.
-  subs.forEach(s => Object.entries(memberMap(s)).forEach(([m, p]) => { if (p) { paidN++; paidAmt += share(s); } else { const mo = Math.max(1, Number(s.unpaidMonths && s.unpaidMonths[m]) || 1); unpaid.push({s, m, amt: share(s) * mo, mo}); } }));
+  act.forEach(s => Object.entries(memberMap(s)).forEach(([m, p]) => { if (p) { paidN++; paidAmt += share(s); } else { const mo = Math.max(1, Number(s.unpaidMonths && s.unpaidMonths[m]) || 1); unpaid.push({s, m, amt: share(s) * mo, mo}); } }));
   const owed = sum(unpaid.map(u => u.amt));
   const trialWindow = Math.max(0, Number(settings.trialDays ?? 7));
   const ending = settings.trialAlerts === false ? [] : trials.filter(s => inDays(trialEnd(s)) <= trialWindow), trialCost = sum(trials.map(share));
@@ -347,6 +356,11 @@ window.addEventListener('storage', event => {
 // Also refresh when the page becomes visible again after another tab was active.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 render();
+// Window pageshow (Back/Forward cache) refresh.
+window.addEventListener('pageshow', e => { if (e.persisted) render(); });
+// Show the icon font only once it has loaded (avoids raw text like "call_split").
+(() => { const done = () => document.documentElement.classList.remove('icons-pending');
+  try { Promise.race([document.fonts.load('24px "Material Symbols Outlined"'), new Promise(r => setTimeout(r, 3000))]).then(done, done); } catch { done(); } })();
 })();
 </script>
 </body>

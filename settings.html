@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="icons-pending">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,7 @@
 <style>
 html{scroll-behavior:smooth;scroll-padding-top:84px}body{overscroll-behavior:none}
 section[id]{scroll-margin-top:84px}
+.icons-pending .material-symbols-outlined{display:inline-block;width:1em;overflow:hidden;white-space:nowrap;color:transparent!important}
 :focus-visible{outline:2px solid #5046e5;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
@@ -222,6 +223,8 @@ const str = v => typeof v === 'string' ? v : '';
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const parse = s => new Date(s + 'T00:00');
 const inDays = d => Math.round((d - today()) / 864e5);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const validDate = v => typeof v === 'string' && DATE_RE.test(v) && !Number.isNaN(parse(v).getTime());
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 let snapshot = '';
 
@@ -295,7 +298,7 @@ function renderHeader() {
   const act = subs.filter(x => x && !x.trial), trials = subs.filter(x => x && x.trial);
   $('hdr-active').textContent = `${act.length} active`;
   const ending = s.trialAlerts ? trials.filter(x => x.date && inDays(parse(x.date)) <= s.trialDays).length : 0;
-  const unpaid = s.unpaidAlerts ? subs.reduce((n, x) => n + Object.values(members(x)).filter(p => !p).length, 0) : 0;
+  const unpaid = s.unpaidAlerts ? act.reduce((n, x) => n + Object.values(members(x)).filter(p => !p).length, 0) : 0;
   const alerts = ending + unpaid; renderHeader.alerts = {t: ending, u: unpaid};
   const b = $('bell-count'); b.textContent = alerts; b.classList.toggle('hidden', !alerts); b.classList.toggle('flex', !!alerts);
 }
@@ -361,6 +364,13 @@ $('reset').addEventListener('click', () => {
     const d = normalize(DEFAULTS);
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(d)); localStorage.setItem(LEGACY_KEYS[0], JSON.stringify(d));
     try { localStorage.removeItem(LEGACY_KEYS[1]); } catch {}
+    try { // Group Splits keeps its own copy of the payment handles; clear them too.
+      const g = JSON.parse(localStorage.getItem('SetAndForget.groups.v1') || 'null');
+      if (g && typeof g === 'object' && !Array.isArray(g) && g.settings && typeof g.settings === 'object') {
+        g.settings.venmo = ''; g.settings.zelle = '';
+        localStorage.setItem('SetAndForget.groups.v1', JSON.stringify(g));
+      }
+    } catch {}
     render(); showStatus('Settings restored to defaults. Add your name and save to finish setting up.');
   } catch { showStatus('Unable to reset settings.', false); }
 });
@@ -391,8 +401,8 @@ $('import').addEventListener('change', async e => {
     if (inData) for (const key of DATA_KEYS) {
       if (!Object.prototype.hasOwnProperty.call(inData, key)) continue;
       const v = inData[key];
-      if (key === SUBS_KEY && v !== null && (!Array.isArray(v) || v.some(x => !isObj(x) || typeof x.name !== 'string' || !Number.isFinite(Number(x.cost)) || Number(x.cost) < 0 || (x.members !== undefined && !isObj(x.members)))))
-        throw new Error('Subscription data failed validation.');
+      if (key === SUBS_KEY && v !== null && (!Array.isArray(v) || v.some(x => !isObj(x) || typeof x.name !== 'string' || !(typeof x.id === 'string' || typeof x.id === 'number') || String(x.id) === '' || !validDate(x.date) || (x.trialEndDate !== undefined && !validDate(x.trialEndDate)) || !Number.isFinite(Number(x.cost)) || Number(x.cost) < 0 || (x.members !== undefined && !isObj(x.members)))))
+        throw new Error('Subscription data failed validation (each item needs an id, a name, a cost and a YYYY-MM-DD date).');
       if (key === 'SetAndForget.groups.v1' && v !== null && (!isObj(v) || !Array.isArray(v.groups) || v.groups.some(g => !isObj(g) || !Array.isArray(g.members) || !Array.isArray(g.subs))))
         throw new Error('Group-split data failed validation.');
       writes.push([key, v]);
@@ -410,6 +420,10 @@ window.addEventListener('storage', e => {
   }
 });
 render();
+window.addEventListener('pageshow', e => { if (e.persisted) { if (JSON.stringify(getForm()) === snapshot) render(); else renderHeader(); } });
+// Show the icon font only once it has loaded (avoids raw text like "call_split").
+(() => { const done = () => document.documentElement.classList.remove('icons-pending');
+  try { Promise.race([document.fonts.load('24px "Material Symbols Outlined"'), new Promise(r => setTimeout(r, 3000))]).then(done, done); } catch { done(); } })();
 })();
 </script>
 </body>

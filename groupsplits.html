@@ -165,13 +165,24 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const KEY = 'SetAndForget.groups.v1', SUBS_KEY = 'SetAndForget.v2', SETTINGS_KEY = 'SetAndForget.settings', DAY = 864e5;
 const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', roommates:['Marcus','Sarah','David'], venmo:'', zelle:'', dueSoonAlerts:true, autoClearBalances:false};
-function readAppSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
+// Same read order as the Settings page: legacy keys first, SETTINGS_KEY last so it wins.
+function readAppSettings(){ let raw={}; for(const k of ['SetAndForget.settings.v1','SetAndForget.profile',SETTINGS_KEY]){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
+// Merge only the changed keys into the stored settings object (never bakes in defaults or the placeholder name).
+function patchSettings(patch){ let cur={}; try{const v=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) cur=v;}catch{} try{localStorage.setItem(SETTINGS_KEY, JSON.stringify({...cur,...patch}));}catch{} }
 let appSettings = readAppSettings();
-const meFrom = s => { const n = String((s && (s.name || s.fullName || s.full_name)) || '').trim(); return !n || n === 'Your account' ? 'Alex' : (n.split(/\s+/)[0] || 'Alex'); };
+const PLACEHOLDER_NAME = 'Your account';
+const cleanName = v => { const n = String(v || '').trim(); return n === PLACEHOLDER_NAME ? '' : n; };
+const meFrom = s => { const n = cleanName(s && (s.name || s.fullName || s.full_name)); return n ? (n.split(/\s+/)[0] || 'Alex') : 'Alex'; };
 let ME = meFrom(appSettings);
 const currencyCode = () => appSettings.currency || 'USD';
 const money = n => { try{return new Intl.NumberFormat(undefined,{style:'currency',currency:currencyCode(),minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);}catch{return '$'+r2(Number(n)||0).toFixed(2);} };
 const payLink = () => appSettings.paymentLink || appSettings.venmo || appSettings.zelle || '';
+// Builds payment instructions only from what is actually set; empty string when nothing is.
+const payLine = () => {
+  const v = String(appSettings.venmo || '').trim(), z = String(appSettings.zelle || '').trim(), l = String(appSettings.paymentLink || '').trim();
+  const opts = [v && `Venmo (${v})`, z && `Zelle (${z})`].filter(Boolean);
+  return [opts.length ? `Pay via ${opts.join(' or ')}.` : '', l ? `Payment link: ${l}` : ''].filter(Boolean).join(' ');
+};
 const TONES = ['bg-primary-container/15 text-primary','bg-secondary-container text-on-secondary-container','bg-tertiary-fixed text-on-tertiary-fixed-variant','bg-error-container text-on-error-container','bg-surface-container-high text-on-surface-variant'];
 const BARS = ['bg-primary-container','bg-secondary','bg-tertiary','bg-outline','bg-surface-dim'];
 
@@ -182,6 +193,9 @@ const iso = d => d.toLocaleDateString('sv');
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const plus = n => { const d = today(); d.setDate(d.getDate() + n); return iso(d); };
 const parse = s => new Date(s + 'T00:00');
+const okDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(parse(s).getTime());
+// Add one month, clamping to the month's last day; `day` is the original billing day so dates never drift.
+const addMonth = (d, day = d.getDate()) => { const r = new Date(d.getFullYear(), d.getMonth() + 1, 1); r.setDate(Math.min(day, new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate())); return r; };
 const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
 const inDays = d => Math.round((d - today()) / DAY);
 const when = n => n <= 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`;
@@ -196,7 +210,7 @@ function ago(ts) {
 }
 
 // ---------- data (sample data; replace with your API) ----------
-const seed = () => { const now = Date.now(); return {active:'g1', updated:now, settings:{venmo:'@alexchen-split', zelle:'alex@chen.me', auto:true}, groups:[
+const seed = () => { const now = Date.now(); return {active:'g1', updated:now, settings:{venmo:'', zelle:'', auto:true}, groups:[
   {id:'g1', name:'Apt 4B Roommates', hid:'#SUB-4B-902', members:['Alex','Sarah','David','Marcus'], subs:[
     {id:'netflix', name:'Netflix 4K Premium', icon:'movie', tone:'bg-error/10 text-error', cost:22.99, payer:'Alex', date:plus(4), m:{Alex:0, Sarah:2, David:0, Marcus:0}},
     {id:'spotify', name:'Spotify Family Plan', icon:'music_note', tone:'bg-secondary/10 text-secondary', cost:16.99, payer:'Alex', date:plus(12), m:{Alex:0, David:0, Marcus:0}},
@@ -210,6 +224,9 @@ const seed = () => { const now = Date.now(); return {active:'g1', updated:now, s
   {id:'g3', name:'Design Studio Co-op', hid:'#SUB-DS-207', members:['Alex','Priya'], subs:[], log:[]}]}; };
 let data; try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!data || !Array.isArray(data.groups)) data = seed();
+// Drop malformed dates (e.g. from an imported backup) so they never show "Invalid Date" or NaN days.
+function sanitizeData(){ for (const g of data.groups) { g.members = Array.isArray(g.members) ? g.members : []; g.subs = Array.isArray(g.subs) ? g.subs : []; g.log = Array.isArray(g.log) ? g.log : []; for (const s of g.subs) if (!okDate(s.date)) s.date = plus(30); } }
+sanitizeData();
 const SG = () => { if (!data.syncGroup || !data.groups.some(x => x.id === data.syncGroup)) data.syncGroup = data.active; return data.groups.find(x => x.id === data.syncGroup) || data.groups[0]; };
 function normalizeProfile(){
   appSettings = readAppSettings();
@@ -223,12 +240,9 @@ function normalizeProfile(){
     }
   }
   data.me = newMe; ME = newMe;
-  data.settings = {...(data.settings || {}), venmo:appSettings.venmo || data.settings?.venmo || '', zelle:appSettings.zelle || data.settings?.zelle || '', dueSoonAlerts:appSettings.dueSoonAlerts !== false};
-  const g = data.groups.find(x => x.id === data.active) || data.groups[0];
-  if (g && Array.isArray(appSettings.roommates)) {
-    const wanted = [ME, ...appSettings.roommates.filter(n => typeof n === 'string' && n.trim()).map(n => n.trim()).filter(n => n.toLowerCase() !== ME.toLowerCase())];
-    g.members = [...new Set([...(g.members || []), ...wanted])];
-  }
+  // Payment handles come only from Settings, so no stale or demo value can leak into reminders.
+  data.settings = {...(data.settings || {}), venmo:appSettings.venmo || '', zelle:appSettings.zelle || '', dueSoonAlerts:appSettings.dueSoonAlerts !== false};
+  // The Settings roommate list is intentionally NOT merged into the active group; it only prefills "New group".
 }
 function processLocalBillingCycles(){
   let changed = false;
@@ -236,8 +250,9 @@ function processLocalBillingCycles(){
     if (s.dashboardLinked || !s.date) continue;
     let due = parse(s.date), guard = 0;
     if (Number.isNaN(due.getTime())) continue;
+    if (!s.billDay) { s.billDay = due.getDate(); changed = true; }
     while (due < today() && guard++ < 240) {
-      due.setMonth(due.getMonth() + 1);
+      due = addMonth(due, s.billDay);
       for (const name of Object.keys(s.m || {})) if (name !== s.payer) s.m[name] = (Number(s.m[name]) || 0) + 1;
       changed = true;
     }
@@ -250,11 +265,11 @@ function syncDashboardSubsIntoGroup(){
   if (!Array.isArray(ds)) { processLocalBillingCycles(); return; }
   let cycleChanged = false, todayDate = today();
   for (const d of ds) {
-    if (!d || d.trial || !d.date || !d.members || typeof d.members !== 'object') continue;
+    if (!d || d.trial || !okDate(d.date) || !d.members || typeof d.members !== 'object') continue;
     let due = parse(d.date), guard = 0;
-    if (Number.isNaN(due.getTime())) continue;
+    if (!d.billDay) { d.billDay = due.getDate(); cycleChanged = true; }
     while (due < todayDate && guard++ < 240) {
-      due.setMonth(due.getMonth() + 1);
+      due = addMonth(due, d.billDay);
       d.unpaidMonths = d.unpaidMonths || {};
       for (const name of Object.keys(d.members)) {
         d.unpaidMonths[name] = d.members[name] ? 1 : (Number(d.unpaidMonths[name]) || 0) + 1;
@@ -266,13 +281,16 @@ function syncDashboardSubsIntoGroup(){
   }
   if (cycleChanged) try { localStorage.setItem(SUBS_KEY, JSON.stringify(ds)); } catch {}
   const g = SG(); if (!g) return;
+  // Remove linked group bills whose dashboard subscription no longer exists.
+  const liveIds = new Set(ds.filter(x => x && typeof x === 'object').map(x => String(x.id)));
+  for (const grp of data.groups) grp.subs = (grp.subs || []).filter(s => !s.dashboardLinked || liveIds.has(String(s.id)));
   const known = new Map((g.subs || []).map(s => [String(s.id), s]));
   for (const d of ds) {
-    if (!d || typeof d !== 'object' || d.trial || !d.members || !Object.keys(d.members).length) continue;
+    if (!d || typeof d !== 'object' || d.trial || !okDate(d.date) || !d.members || !Object.keys(d.members).length) continue;
     const old = known.get(String(d.id));
     const m = {[ME]: 0};
     for (const [name, paid] of Object.entries(d.members)) m[name] = paid ? 0 : Math.max(1, Number(d.unpaidMonths?.[name]) || 1);
-    const mapped = {id:String(d.id), name:String(d.name || 'Subscription'), icon:String(d.icon || 'receipt_long'), tone:String(d.tone || 'bg-surface-container-high text-primary'), cost:Math.max(0,Number(d.cost)||0), payer:ME, date:String(d.date || plus(30)), m, dashboardLinked:true};
+    const mapped = {id:String(d.id), name:String(d.name || 'Subscription'), icon:String(d.icon || 'receipt_long'), tone:String(d.tone || 'bg-surface-container-high text-primary'), cost:Math.max(0,Number(d.cost)||0), payer:ME, date:String(d.date), billDay:d.billDay || parse(d.date).getDate(), m, dashboardLinked:true};
     if (old) { if (old.dashboardLinked) Object.assign(old, mapped); } else { g.subs.push(mapped); }
     for (const name of Object.keys(m)) if (!g.members.includes(name)) g.members.push(name);
   }
@@ -332,7 +350,7 @@ async function copy(text, ok) {
 // ---------- render ----------
 function billHTML(g, s) {
   const sh = share(s), n = Object.keys(s.m).length, ow = owingOf(s), mine = ME in s.m, d = parse(s.date);
-  const dd = (() => { const x = new Date(d); while (x < today()) x.setMonth(x.getMonth() + 1); return x; })();
+  const dd = (() => { let x = new Date(d), day = s.billDay || d.getDate(), n = 0; while (x < today() && n++ < 240) x = addMonth(x, day); return x; })();
   const others = Object.keys(s.m).filter(x => x !== s.payer), settledN = others.length - ow.length;
   const meOwes = s.payer !== ME && s.m[ME] > 0;
   let right;
@@ -344,8 +362,8 @@ function billHTML(g, s) {
       <div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h3 class="font-body-lg text-body-lg font-semibold truncate">${esc(s.name)}</h3><span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase">${esc(s.payer)} pays</span></div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-body-sm text-on-surface-variant mt-0.5"><span class="font-label-numeric text-on-surface font-semibold">${money(s.cost)}/mo</span><span aria-hidden="true">•</span><span>${n}-way split (${money(sh)}/ea)</span><span aria-hidden="true">•</span>${note}</div></div></div>
     <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0"><div class="flex flex-col items-start sm:items-end">${right}</div>
-      <div class="flex items-center gap-1">${s.payer === ME && ow.length ? `<button type="button" data-act="ping" data-id="${s.id}" aria-label="Copy reminder for ${esc(s.name)}" title="Copy reminder" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><span class="material-symbols-outlined text-lg">notifications_active</span></button>` : ''}
-      <button type="button" data-act="remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}" title="Remove bill" class="p-1.5 text-outline hover:text-error hover:bg-error-container/50 rounded-lg"><span class="material-symbols-outlined text-lg">delete</span></button></div></div></li>`;
+      <div class="flex items-center gap-1">${s.payer === ME && ow.length ? `<button type="button" data-act="ping" data-id="${esc(s.id)}" aria-label="Copy reminder for ${esc(s.name)}" title="Copy reminder" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg"><span class="material-symbols-outlined text-lg">notifications_active</span></button>` : ''}
+      <button type="button" data-act="remove" data-id="${esc(s.id)}" aria-label="Remove ${esc(s.name)}" title="Remove bill" class="p-1.5 text-outline hover:text-error hover:bg-error-container/50 rounded-lg"><span class="material-symbols-outlined text-lg">delete</span></button></div></div></li>`;
 }
 
 function render() {
@@ -356,7 +374,7 @@ function render() {
   const yours = sum(subs.filter(s => ME in s.m).map(share));
   const pairs = sum(subs.map(s => Object.keys(s.m).length - (s.payer in s.m ? 1 : 0))), unsettled = dl.length;
   const pct = pairs ? Math.round((pairs - unsettled) / pairs * 100) : 100;
-  const upcoming = subs.map(s => { const d = parse(s.date); while (d < today()) d.setMonth(d.getMonth() + 1); return {s, d}; }).sort((a, b) => a.d - b.d)[0];
+  const upcoming = subs.map(s => { let d = parse(s.date), day = s.billDay || d.getDate(), n = 0; while (d < today() && n++ < 240) d = addMonth(d, day); return {s, d}; }).sort((a, b) => a.d - b.d)[0];
   const perMember = mem.map(m => sum(subs.filter(s => m in s.m).map(share)));
   const simple = simplify(bal);
 
@@ -369,8 +387,9 @@ function render() {
   $('#btn-settle-all').disabled = !dl.length;
   const alerts = unsettled; $('#bell-count').textContent = alerts; $('#bell-count').classList.toggle('hidden', !alerts); $('#bell-count').classList.toggle('flex', !!alerts);
   $('#yr').textContent = now.getFullYear();
-  $('#profile-name').textContent = String(appSettings.name || appSettings.fullName || appSettings.full_name || 'Your account');
-  $('#profile-initials').textContent = String(appSettings.name || appSettings.fullName || appSettings.full_name || 'U').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('') || 'U';
+  const pName = cleanName(appSettings.name || appSettings.fullName || appSettings.full_name);
+  $('#profile-name').textContent = pName || PLACEHOLDER_NAME;
+  $('#profile-initials').textContent = pName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('') || 'U';
 
   // nav
   const nav = [['Dashboard', 'dashboard.html'], ['Group Splits', '#'], ['Analytics', 'analytics.html'], ['Settings', 'settings.html']];
@@ -379,8 +398,8 @@ function render() {
 
   // group pills
   $('#pills').innerHTML = data.groups.map(x => x.id === g.id
-    ? `<button type="button" data-act="group" data-id="${x.id}" aria-pressed="true" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-surface-container-lowest shadow-sm text-body-sm font-semibold whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-primary-container"></span>${esc(x.name)}<span class="flex items-center -space-x-1.5 ml-1">${x.members.slice(0, 3).map((m, i) => `<span class="w-5 h-5 rounded-full ${TONES[i]} text-[8px] font-bold flex items-center justify-center shadow-[0_0_0_2px_#fff]">${ini(m)}</span>`).join('')}${x.members.length > 3 ? `<span class="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant font-label-numeric text-[9px] flex items-center justify-center font-bold shadow-[0_0_0_2px_#fff]">+${x.members.length - 3}</span>` : ''}</span></button>`
-    : `<button type="button" data-act="group" data-id="${x.id}" aria-pressed="false" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-body-sm font-medium whitespace-nowrap">${esc(x.name)}<span class="px-1.5 rounded-md bg-surface-container-high font-label-numeric text-[10px]">${x.members.length}</span></button>`).join('')
+    ? `<button type="button" data-act="group" data-id="${esc(x.id)}" aria-pressed="true" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-surface-container-lowest shadow-sm text-body-sm font-semibold whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-primary-container"></span>${esc(x.name)}<span class="flex items-center -space-x-1.5 ml-1">${x.members.slice(0, 3).map((m, i) => `<span class="w-5 h-5 rounded-full ${TONES[i]} text-[8px] font-bold flex items-center justify-center shadow-[0_0_0_2px_#fff]">${ini(m)}</span>`).join('')}${x.members.length > 3 ? `<span class="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant font-label-numeric text-[9px] flex items-center justify-center font-bold shadow-[0_0_0_2px_#fff]">+${x.members.length - 3}</span>` : ''}</span></button>`
+    : `<button type="button" data-act="group" data-id="${esc(x.id)}" aria-pressed="false" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-body-sm font-medium whitespace-nowrap">${esc(x.name)}<span class="px-1.5 rounded-md bg-surface-container-high font-label-numeric text-[10px]">${x.members.length}</span></button>`).join('')
     + `<button type="button" data-act="open-group" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-surface-container-lowest text-primary text-body-sm font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-base">add</span>New group</button>`;
 
   // stat cards
@@ -417,7 +436,7 @@ function render() {
 
   // balances
   $('#balances').innerHTML = mem.filter(m => m !== ME).map(m => {
-    const i = mem.indexOf(m), b = r2(-(bal[m] || 0)); // positive = owes you (pairwise below)
+    const i = mem.indexOf(m);
     const owesMe = r2(sum(dl.filter(x => x.from === m && x.to === ME).map(x => x.amt))), iOwe = r2(sum(dl.filter(x => x.from === ME && x.to === m).map(x => x.amt)));
     const av = `<div class="w-9 h-9 rounded-full ${TONES[i % 5]} flex items-center justify-center font-bold text-xs shrink-0">${ini(m)}</div>`;
     if (!owesMe && !iOwe) return `<div class="p-3.5 rounded-xl bg-surface-container-low/60 flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0">${av}<div class="min-w-0"><span class="text-body-sm font-semibold block leading-tight truncate">${esc(m)}</span><span class="text-outline font-label-numeric text-xs">${plural(subs.filter(s => m in s.m).length, 'shared bill')}</span></div></div><div class="text-right"><span class="font-label-numeric text-body-md font-bold text-secondary block leading-none">${money(0)}</span><span class="font-label-caps text-[10px] text-secondary font-bold uppercase">All square</span></div></div>`;
@@ -447,7 +466,7 @@ function render() {
 
 // ---------- dialogs ----------
 function openDlg(id) { lastFocus = document.activeElement; const d = $(id); d.inert = false; d.setAttribute('aria-hidden', 'false'); d.classList.remove('opacity-0', 'pointer-events-none'); setTimeout(() => d.querySelector('input,select').focus(), 50); }
-function closeDlg() { $$('.dlg').forEach(d => { if (!d.inert) { d.inert = true; d.setAttribute('aria-hidden', 'true'); d.classList.add('opacity-0', 'pointer-events-none'); } }); lastFocus && lastFocus.focus && lastFocus.focus(); }
+function closeDlg() { let was = false; $$('.dlg').forEach(d => { if (!d.inert) { was = true; d.inert = true; d.setAttribute('aria-hidden', 'true'); d.classList.add('opacity-0', 'pointer-events-none'); } }); if (was && lastFocus && lastFocus.focus) lastFocus.focus(); }
 function billCalc() { const v = parseFloat($('#b-cost').value) || 0, n = bill.size; $('#b-calc').textContent = n ? `${n} ${n === 1 ? 'person' : 'people'}: ${money(v / n)} each` : 'Pick at least one person'; }
 function billChips() { $('#b-chips').innerHTML = G().members.map(m => `<button type="button" data-act="chip" data-m="${esc(m)}" aria-pressed="${bill.has(m)}" class="px-2.5 py-1 rounded-full text-xs font-medium ${bill.has(m) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container'}">${bill.has(m) ? '✓' : '+'} ${esc(m)}</button>`).join(''); billCalc(); }
 function openBill() {
@@ -458,7 +477,10 @@ function openBill() {
 $('#form-bill').addEventListener('submit', e => {
   e.preventDefault(); const g = G(), name = $('#b-name').value.trim(), cost = parseFloat($('#b-cost').value);
   if (!name || !(cost > 0)) return; if (!bill.size) return toast('Pick at least one person to split with.', 'error');
-  g.subs.push({id: Date.now().toString(36), name, cost, payer: $('#b-payer').value, date: $('#b-date').value, m: Object.fromEntries([...bill].map(n => [n, 0]))});
+  const payer = $('#b-payer').value, date = $('#b-date').value;
+  if (!okDate(date)) return toast('Pick a valid billing date.', 'error');
+  // Like the dashboard, everyone except the payer starts as unpaid (1 month owed).
+  g.subs.push({id: Date.now().toString(36), name, cost, payer, date, billDay: parse(date).getDate(), m: Object.fromEntries([...bill].map(n => [n, n === payer ? 0 : 1]))});
   save(); closeDlg(); tab = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = ''); render(); toast(`Added "${name}"`);
 });
 $('#b-cost').addEventListener('input', billCalc);
@@ -478,7 +500,7 @@ document.addEventListener('click', e => {
   if (act === 'menu' || act === 'bell') e.preventDefault();
   switch (act) {
     case 'open-bill': openBill(); break;
-    case 'open-group': $('#form-group').reset(); openDlg('#dlg-group'); break;
+    case 'open-group': { $('#form-group').reset(); const pre = (Array.isArray(appSettings.roommates) ? appSettings.roommates : []).filter(n => typeof n === 'string' && n.trim() && n.trim().toLowerCase() !== ME.toLowerCase()).map(n => n.trim()); $('#g-members').value = pre.join(', '); openDlg('#dlg-group'); break; }
     case 'close': closeDlg(); break;
     case 'menu': { const n = $('#nav-m'); n.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !n.classList.contains('hidden')); break; }
     case 'bell': toast(dl.length ? `${plural(dl.length, 'unsettled share')} in ${g.name}` : 'Everything is settled up', 'notifications'); break;
@@ -486,10 +508,14 @@ document.addEventListener('click', e => {
     case 'tab': tab = el.dataset.tab; render(); break;
     case 'toggle-log': showAll = !showAll; render(); break;
     case 'chip': bill.has(m) ? bill.delete(m) : bill.add(m); billChips(); break;
-    case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) { g.subs = g.subs.filter(x => x !== s); save(); render(); toast(`Removed "${s.name}"`, 'delete'); } break;
-    case 'ping': if (s) { const o = owingOf(s); copy(`Hi ${o.map(x => x[0]).join(' & ')}, your ${money(share(s))} share for ${s.name} is due. Pay ${appSettings.venmo || data.settings.venmo || 'your Venmo'} on Venmo or ${appSettings.zelle || data.settings.zelle || 'your Zelle'} on Zelle.`, 'Reminder copied. Paste it in your group chat.'); log(g, {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'}); save(); render(); } break;
-    case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SetAndForget reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + `\nPay: ${appSettings.venmo || data.settings.venmo || 'not set'} (Venmo) or ${appSettings.zelle || data.settings.zelle || 'not set'} (Zelle)${payLink() ? `\nPayment link: ${payLink()}` : ''}`, 'Reminder copied. Paste it in your group chat.'); break; }
-    case 'nudge': { const mine = dl.filter(x => x.from === m && x.to === ME); copy(`Hey ${m}, you owe ${money(sum(mine.map(x => x.amt)))} (${mine.map(x => x.s.name).join(', ')}). Pay ${appSettings.venmo || data.settings.venmo || 'your Venmo'} on Venmo or ${appSettings.zelle || data.settings.zelle || 'your Zelle'} on Zelle.`, `Payment request for ${m} copied`); break; }
+    case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) {
+      g.subs = g.subs.filter(x => x !== s);
+      // Also delete it from the dashboard list, otherwise the next sync re-adds it.
+      try { const ds = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); if (Array.isArray(ds)) { const kept = ds.filter(x => !x || String(x.id) !== String(s.id)); if (kept.length !== ds.length) localStorage.setItem(SUBS_KEY, JSON.stringify(kept)); } } catch {}
+      save(); render(); toast(`Removed "${s.name}"`, 'delete'); } break;
+    case 'ping': if (s) { const o = owingOf(s); copy(`Hi ${o.map(x => x[0]).join(' & ')}, your ${money(share(s))} share for ${s.name} is due.${payLine() ? ' ' + payLine() : ''}`, 'Reminder copied. Paste it in your group chat.'); log(g, {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'}); save(); render(); } break;
+    case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SetAndForget reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + (payLine() ? `\n${payLine()}` : ''), 'Reminder copied. Paste it in your group chat.'); break; }
+    case 'nudge': { const mine = dl.filter(x => x.from === m && x.to === ME); copy(`Hey ${m}, you owe ${money(sum(mine.map(x => x.amt)))} (${mine.map(x => x.s.name).join(', ')}).${payLine() ? ' ' + payLine() : ''}`, `Payment request for ${m} copied`); break; }
     case 'mark': {
       let from = m, to = ME, hit = dl.filter(x => x.from === m && x.to === ME);
       if (!hit.length) { hit = dl.filter(x => x.from === ME && x.to === m); from = ME; to = m; }
@@ -497,7 +523,7 @@ document.addEventListener('click', e => {
       log(g, {k:'paid', a:from, v:'settled with', b:to, d:[...new Set(hit.map(x => x.s.name))].join(', '), amt:(from === m ? '+' : '-') + money(total), tag:'Manual'});
       save(); render(); toast(`Marked ${money(total)} as paid`); break; }
     case 'settle-all': if (dl.length && confirm(`Mark all ${plural(dl.length, 'unsettled share')} (${money(sum(dl.map(x => x.amt)))}) as paid?`)) { const t = sum(dl.map(x => x.amt)); dl.forEach(x => { x.s.m[x.from] = 0; }); log(g, {k:'swap', a:'Everyone', v:'settled up in', b:g.name, d:'All outstanding shares', amt:money(t), tag:'Settle all'}); save(); render(); toast('All balances settled'); } break;
-    case 'edit': { const f = el.dataset.f, v = prompt(f === 'venmo' ? 'Your Venmo handle' : 'Your Zelle email', appSettings[f] || data.settings[f] || ''); if (v !== null) { appSettings[f] = v.trim().slice(0, 100); data.settings[f] = appSettings[f]; try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({...readAppSettings(), [f]:appSettings[f]})); } catch {} save(); render(); } break; }
+    case 'edit': { const f = el.dataset.f, v = prompt(f === 'venmo' ? 'Your Venmo handle' : 'Your Zelle email', appSettings[f] || data.settings[f] || ''); if (v !== null) { appSettings[f] = v.trim().slice(0, 100); data.settings[f] = appSettings[f]; patchSettings({[f]:appSettings[f]}); save(); render(); } break; }
     case 'export': {
       const rows = [['Bill', 'Total', 'Paid by', 'Member', 'Share', 'Months unpaid']];
       g.subs.forEach(x => Object.entries(x.m).forEach(([n, mo]) => rows.push([x.name, x.cost.toFixed(2), x.payer, n, share(x).toFixed(2), n === x.payer ? 0 : mo])));
@@ -506,7 +532,7 @@ document.addEventListener('click', e => {
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Ledger downloaded', 'download'); break; }
   }
 });
-document.addEventListener('change', e => { if (e.target.id === 'auto') { appSettings.dueSoonAlerts = e.target.checked; data.settings.dueSoonAlerts = e.target.checked; try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({...readAppSettings(), dueSoonAlerts:e.target.checked})); } catch {} save(); } });
+document.addEventListener('change', e => { if (e.target.id === 'auto') { appSettings.dueSoonAlerts = e.target.checked; data.settings.dueSoonAlerts = e.target.checked; patchSettings({dueSoonAlerts:e.target.checked}); save(); } });
 $$('[data-search]').forEach(inp => inp.addEventListener('input', () => { q = inp.value; $$('[data-search]').forEach(o => o.value = q); render(); }));
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeDlg();
@@ -515,13 +541,16 @@ document.addEventListener('keydown', e => {
 
 // ---------- init ----------
 render();
+function reloadAll() {
+  appSettings = readAppSettings();
+  try { const fresh = JSON.parse(localStorage.getItem(KEY) || 'null'); if (fresh && Array.isArray(fresh.groups)) data = fresh; } catch {}
+  sanitizeData(); normalizeProfile(); syncDashboardSubsIntoGroup(); render();
+}
 window.addEventListener('storage', event => {
-  if (!event.key || [SUBS_KEY, SETTINGS_KEY, 'SetAndForget.settings.v1', 'SetAndForget.profile', KEY].includes(event.key)) {
-    appSettings = readAppSettings();
-    try { const fresh = JSON.parse(localStorage.getItem(KEY) || 'null'); if (fresh && Array.isArray(fresh.groups)) data = fresh; } catch {}
-    normalizeProfile(); syncDashboardSubsIntoGroup(); render();
-  }
+  if (!event.key || [SUBS_KEY, SETTINGS_KEY, 'SetAndForget.settings.v1', 'SetAndForget.profile', KEY].includes(event.key)) reloadAll();
 });
+// Refresh when returning via the browser Back/Forward cache.
+window.addEventListener('pageshow', event => { if (event.persisted) reloadAll(); });
 if (appSettings.dueSoonAlerts !== false) {
   const g = G(), soon = g.subs.find(s => owingOf(s).length && inDays(parse(s.date)) <= Math.max(0, Number(appSettings.dueSoonDays ?? appSettings.unpaidDays ?? 2)) && inDays(parse(s.date)) >= 0);
   if (soon) toast(`${soon.name} bills ${when(inDays(parse(soon.date)))} with ${plural(owingOf(soon).length, 'unpaid share')}`, 'schedule');

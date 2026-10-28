@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="icons-pending">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,6 +12,7 @@ html{scroll-behavior:smooth}body{overscroll-behavior:none}
 #list,#analytics{scroll-margin-top:84px}
 .tabs{scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
 :focus-visible{outline:2px solid #5046e5;outline-offset:2px}
+.icons-pending .material-symbols-outlined{display:inline-block;width:1em;overflow:hidden;white-space:nowrap;color:transparent!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -93,7 +94,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 
       <div class="md:col-span-3 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between mb-3"><span class="text-label-caps font-label-caps uppercase text-on-surface-variant">Next 7 days</span><span class="material-symbols-outlined text-tertiary text-lg">calendar_month</span></div>
+          <div class="flex items-center justify-between mb-3"><span id="stat-week-label" class="text-label-caps font-label-caps uppercase text-on-surface-variant">Next 7 days</span><span class="material-symbols-outlined text-tertiary text-lg">calendar_month</span></div>
           <div class="flex items-baseline gap-1.5 mb-1"><span id="stat-week" class="font-headline-lg text-headline-lg font-bold">$0.00</span><span class="text-body-sm text-outline">due</span></div>
           <p id="stat-week-n" class="text-body-sm text-on-surface-variant"></p>
         </div>
@@ -193,11 +194,14 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const KEY = 'SetAndForget.v2', SETTINGS_KEY = 'SetAndForget.settings';
 const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', defaultCategory:'Streaming', roommates:['Marcus','Sarah','David'], trialAlerts:true, unpaidAlerts:true, trialDays:7, unpaidDays:7, weeklySummary:false, autoClearBalances:false, dueSoonAlerts:true};
-function readSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try { const v=JSON.parse(localStorage.getItem(k)||'null'); if(v && typeof v==='object' && !Array.isArray(v)){raw={...raw,...v};} } catch{} } return {...DEFAULT_SETTINGS,...raw}; }
+function readSettings(){ let raw={}; for(const k of ['SetAndForget.profile','SetAndForget.settings.v1',SETTINGS_KEY]){ try { const v=JSON.parse(localStorage.getItem(k)||'null'); if(v && typeof v==='object' && !Array.isArray(v)){raw={...raw,...v};} } catch{} } return {...DEFAULT_SETTINGS,...raw}; }
 let settings = readSettings();
 const PAY_LINK = () => settings.paymentLink || settings.venmo || settings.zelle || '';
 const ROOMMATES = () => Array.isArray(settings.roommates) ? settings.roommates.filter(x=>typeof x==='string' && x.trim()).map(x=>x.trim()) : DEFAULT_SETTINGS.roommates;
 const CATS = {Streaming:['Streaming','bg-secondary'], Software:['Software & Productivity','bg-primary'], 'AI Tools':['AI Tools','bg-tertiary'], Cloud:['Cloud Storage','bg-outline'], Utilities:['Utilities & Wifi','bg-inverse-surface']};
+const PLACEHOLDER_NAME = 'Your account';
+const cleanName = v => { const n = String(v || '').trim().slice(0, 80); return n === PLACEHOLDER_NAME ? '' : n; };
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const NAV = [['dashboard','Dashboard'],['group-splits','Group Splits'],['analytics','Analytics'],['settings','Settings']];
 
 // ---------- helpers ----------
@@ -216,15 +220,36 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const people = s => 1 + Object.keys(s.members).length;
 const share = s => s.cost / people(s);
 const nextDate = s => parse(s.date);
+// Month-end safe: Jan 31 -> Feb 28 -> Mar 31 when the original billing day is kept.
+const addMonth = (d, day = d.getDate()) => { const r = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  r.setDate(Math.min(day, new Date(r.getFullYear(), r.getMonth()+1, 0).getDate())); return r; };
+const validDay = v => Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 31;
+const owedMonths = (s, m) => Math.max(1, Number(s.unpaidMonths?.[m]) || 1);
+// Drop malformed entries (e.g. from a bad import) so the UI never shows Invalid Date / NaN.
+function sanitize(list){
+  return list.filter(s => s && typeof s === 'object' && (typeof s.id === 'string' || typeof s.id === 'number') && String(s.id) !== ''
+    && typeof s.date === 'string' && DATE_RE.test(s.date) && !Number.isNaN(parse(s.date).getTime())
+    && Number.isFinite(Number(s.cost)) && Number(s.cost) > 0)
+    .map(s => { s.id = String(s.id); s.cost = Number(s.cost); s.name = String(s.name || 'Untitled'); return s; });
+}
 function normalizeCycles(){
   let changed=false; const now=today();
   for(const s of subs){ if(!s || typeof s!=='object') continue; s.members = s.members && typeof s.members==='object' && !Array.isArray(s.members) ? s.members : {};
-    if(s.trial && s.date && parse(s.date) <= now){ s.trial=false; s.convertedFromTrial=true; s.date=iso(parse(s.date)); changed=true; }
-    if(!s.trial && s.date){ let d=parse(s.date), guard=0; if(!Number.isNaN(d.getTime())){ while(d < now && guard++ < 240){ d.setMonth(d.getMonth()+1); s.unpaidMonths=s.unpaidMonths||{}; for(const name of Object.keys(s.members)){ s.unpaidMonths[name]=s.members[name] ? 1 : (Number(s.unpaidMonths[name])||0)+1; s.members[name]=false; } changed=true; } if(guard>0) s.date=iso(d); } }
+    if(s.trial && s.date && parse(s.date) < now){ s.trial=false; s.convertedFromTrial=true; s.billDay=parse(s.date).getDate(); s.date=iso(parse(s.date)); changed=true; }
+    if(!s.trial && s.date){ let d=parse(s.date), guard=0;
+      if(!Number.isNaN(d.getTime())){
+        if(!validDay(s.billDay)){ s.billDay=d.getDate(); changed=true; }
+        while(d < now && guard++ < 240){ d=addMonth(d, Number(s.billDay)); s.unpaidMonths=s.unpaidMonths||{}; for(const name of Object.keys(s.members)){ s.unpaidMonths[name]=s.members[name] ? 1 : (Number(s.unpaidMonths[name])||0)+1; s.members[name]=false; } changed=true; }
+        if(guard>0) s.date=iso(d); } }
   } return changed;
 }
-function refreshSettingsUI(){ settings=readSettings(); const nm=String(settings.name||settings.fullName||settings.full_name||'Your account'); $('#profile-name').textContent=nm; $('#profile-initials').textContent=nm.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')||'U'; $('#currency-symbol').textContent=({USD:'$',INR:'₹',EUR:'€',GBP:'£',CAD:'CA$',AUD:'A$',JPY:'¥'})[currencyCode()]||currencyCode()+' '; $('#currency-label').textContent=$('#currency-symbol').textContent+'/mo';
-  const rm=ROOMMATES(); for(const n of Object.keys(CATS)){} return rm; }
+function refreshSettingsUI(){ settings=readSettings();
+  const nm=cleanName(settings.name||settings.fullName||settings.full_name);
+  $('#profile-name').textContent=nm||PLACEHOLDER_NAME;
+  $('#profile-initials').textContent=nm.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')||'U';
+  $('#currency-symbol').textContent=({USD:'$',INR:'₹',EUR:'€',GBP:'£',CAD:'CA$',AUD:'A$',JPY:'¥'})[currencyCode()]||currencyCode()+' ';
+  $('#currency-label').textContent=$('#currency-symbol').textContent+'/mo';
+  return ROOMMATES(); }
 
 
 // ---------- data (sample data; replace with your API) ----------
@@ -239,6 +264,7 @@ const seed = () => [
 ];
 let subs; try { subs = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!Array.isArray(subs)) { subs = seed(); try { localStorage.setItem(KEY, JSON.stringify(subs)); } catch {} }
+else subs = sanitize(subs);
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(subs)); } catch { toast('Could not save changes to this browser.', 'error'); } };
 
 let tab = 'all', cat = 'all', q = '', sel = null, page = 'dashboard', bannerOff = false, picked = new Set(), lastFocus = null;
@@ -275,15 +301,15 @@ function itemHTML(s) {
     : `<span class="flex items-center gap-1 font-label-numeric text-[11px]"><span class="material-symbols-outlined text-xs">schedule</span>Renews ${fmtDate(d)} (${when(dd)})</span>`;
   const who = shared ? `<span class="text-secondary font-medium">Split with ${plural(m.length, 'roommate')}</span>` : `<span class="text-outline">${s.trial ? 'Personal account' : 'Personal workspace'}</span>`;
   const amt = s.trial
-    ? `<div class="font-label-numeric text-sm font-bold">${money(s.cost)} <span class="text-xs text-outline font-normal">/mo if kept</span></div><div class="text-[11px] font-label-numeric text-tertiary font-semibold">$0.00 right now</div>`
+    ? `<div class="font-label-numeric text-sm font-bold">${money(s.cost)} <span class="text-xs text-outline font-normal">/mo if kept</span></div><div class="text-[11px] font-label-numeric text-tertiary font-semibold">${money(0)} right now</div>`
     : shared
     ? `<div class="font-label-numeric text-sm font-bold">${money(share(s))} <span class="text-xs text-outline font-normal">your share</span></div><div class="text-[11px] font-label-numeric text-outline">${money(s.cost)}/mo total</div>`
     : `<div class="font-label-numeric text-sm font-bold">${money(s.cost)} <span class="text-xs text-outline font-normal">/mo</span></div><div class="text-[11px] font-label-numeric text-outline">Solo charge</div>`;
   const status = s.trial
-    ? `<button type="button" data-act="remove" data-id="${s.id}" class="px-2.5 py-1 text-xs font-semibold rounded bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-all">Cancel trial</button>`
+    ? `<button type="button" data-act="remove" data-id="${esc(s.id)}" class="px-2.5 py-1 text-xs font-semibold rounded bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-all">Cancel trial</button>`
     : shared
     ? `<span class="px-2 py-1 rounded text-[11px] font-label-caps font-semibold ${paid === m.length ? 'bg-secondary-fixed text-on-secondary-fixed' : 'bg-amber-100 text-amber-800'}">${paid === m.length ? 'All settled' : `${paid}/${m.length} settled`}</span>
-       <button type="button" data-act="inspect" data-id="${s.id}" aria-label="Inspect split for ${esc(s.name)}" title="Inspect split" class="p-1.5 rounded-lg ${s.id === sel ? 'text-primary bg-surface-container-low' : 'text-outline'} hover:text-primary hover:bg-surface-container-low"><span class="material-symbols-outlined text-lg">group</span></button>`
+       <button type="button" data-act="inspect" data-id="${esc(s.id)}" aria-label="Inspect split for ${esc(s.name)}" title="Inspect split" class="p-1.5 rounded-lg ${s.id === sel ? 'text-primary bg-surface-container-low' : 'text-outline'} hover:text-primary hover:bg-surface-container-low"><span class="material-symbols-outlined text-lg">group</span></button>`
     : `<span class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant text-[11px] font-label-caps">Solo</span>`;
   return `<li class="rounded-xl bg-surface-container-lowest p-4 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div class="flex items-center gap-3.5 min-w-0">
@@ -293,16 +319,16 @@ function itemHTML(s) {
     </div>
     <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
       <div class="text-left sm:text-right">${amt}</div>
-      <div class="flex items-center gap-1.5">${status}${s.trial ? '' : `<button type="button" data-act="remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}" title="Remove" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/50"><span class="material-symbols-outlined text-lg">delete</span></button>`}</div>
+      <div class="flex items-center gap-1.5">${status}${s.trial ? '' : `<button type="button" data-act="remove" data-id="${esc(s.id)}" aria-label="Remove ${esc(s.name)}" title="Remove" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/50"><span class="material-symbols-outlined text-lg">delete</span></button>`}</div>
     </div></li>`;
 }
 
 function settleHTML(s) {
   if (!s) return `<h2 class="font-headline-sm text-headline-sm text-base font-semibold">Active settlement</h2><p class="text-sm text-on-surface-variant">No split subscriptions yet. Add one and pick roommates to track who has paid.</p>`;
-  const m = Object.entries(s.members), sh = share(s);
+  const m = Object.entries(s.members), sh = share(s), me = cleanName(settings.name);
   const row = ([name, ok]) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all">
     <div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full ${ok ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container'} flex items-center justify-center font-bold text-xs shrink-0">${esc(name.slice(0,2).toUpperCase())}</div>
-    <div class="min-w-0"><div class="text-xs font-semibold truncate">${esc(name)}</div><div class="text-[10px] font-label-numeric ${ok ? 'text-outline' : 'text-error'}">${ok ? 'Settled' : 'Owes ' + money(sh)}</div></div></div>
+    <div class="min-w-0"><div class="text-xs font-semibold truncate">${esc(name)}</div><div class="text-[10px] font-label-numeric ${ok ? 'text-outline' : 'text-error'}">${ok ? 'Settled' : 'Owes ' + money(sh * owedMonths(s, name))}</div></div></div>
     <div class="flex items-center gap-1.5">
       <button type="button" data-act="toggle" data-m="${esc(name)}" aria-pressed="${ok}" class="px-2.5 py-1 rounded text-xs font-label-numeric font-semibold flex items-center gap-1 ${ok ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container'}"><span class="material-symbols-outlined text-xs">${ok ? 'check' : 'schedule'}</span>${money(sh)} ${ok ? 'paid' : 'unpaid'}</button>
       ${ok ? '' : `<button type="button" data-act="nudge-one" data-m="${esc(name)}" aria-label="Copy payment message for ${esc(name)}" title="Copy payment message" class="p-1 rounded hover:bg-surface-container text-outline hover:text-on-surface"><span class="material-symbols-outlined text-sm">link</span></button>`}
@@ -311,7 +337,7 @@ function settleHTML(s) {
     <div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between"><div><div class="text-xs text-on-surface-variant">Total billed to you</div><div class="font-label-numeric text-base font-bold">${money(s.cost)} <span class="text-xs font-normal text-outline">/mo</span></div></div>
     <div class="text-right"><div class="text-xs text-on-surface-variant">${m.length + 1} equal shares</div><div class="font-label-numeric text-xs font-semibold text-primary">${money(sh)} per person</div></div></div>
     <div class="space-y-2.5"><div class="text-xs font-label-caps uppercase text-outline">Roommate breakdown</div>
-    <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low/50"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-primary-container/15 text-primary flex items-center justify-center font-bold text-xs">${esc((settings.name||'U').split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</div><div><div class="text-xs font-semibold">${esc(settings.name||'You')} (you)</div><div class="text-[10px] text-outline font-label-numeric">Primary payer</div></div></div><span class="px-2 py-0.5 rounded bg-surface-container text-xs font-label-numeric font-medium">${money(sh)} (paid)</span></div>
+    <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low/50"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-primary-container/15 text-primary flex items-center justify-center font-bold text-xs">${esc(me.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase() || 'Y')}</div><div><div class="text-xs font-semibold">${esc(me || 'You')} (you)</div><div class="text-[10px] text-outline font-label-numeric">Primary payer</div></div></div><span class="px-2 py-0.5 rounded bg-surface-container text-xs font-label-numeric font-medium">${money(sh)} (paid)</span></div>
     ${m.map(row).join('')}</div>
     <button type="button" data-act="copy-ledger" class="w-full py-2 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-medium flex items-center justify-center gap-1.5"><span class="material-symbols-outlined text-base">copy_all</span>Copy split ledger</button>`;
 }
@@ -324,7 +350,7 @@ function render() {
 
   // stats
   const total = sum(act.map(share));
-  const unpaid = []; subs.forEach(s => Object.entries(s.members).forEach(([m, p]) => { if (!p) unpaid.push({s, m, amt: share(s)}); }));
+  const unpaid = []; act.forEach(s => Object.entries(s.members).forEach(([m, p]) => { if (!p) unpaid.push({s, m, amt: share(s) * owedMonths(s, m)}); }));
   const owed = sum(unpaid.map(u => u.amt)), friends = new Set(unpaid.map(u => u.m)).size;
   const weekWindow = Math.max(0, Number(settings.dueSoonDays ?? settings.dueSoonWindow ?? 7));
   const week = act.map(s => ({s, d: nextDate(s)})).filter(x => inDays(x.d) >= 0 && inDays(x.d) <= weekWindow).sort((a, b) => a.d - b.d);
@@ -337,6 +363,7 @@ function render() {
   $('#btn-nudge-all').disabled = !unpaid.length;
   $('#btn-nudge-all').lastElementChild.textContent = unpaid.length ? `Copy reminder (${unpaid.length})` : 'Copy reminder';
   $('#stat-week').textContent = money(sum(week.map(x => share(x.s))));
+  $('#stat-week-label').textContent = `Next ${weekWindow} days`;
   $('#stat-week-n').textContent = `${plural(week.length, 'subscription')} due in the next ${weekWindow} days`; 
   $('#week-list').innerHTML = week.slice(0, 3).map(({s, d}) => `<div class="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-surface-container-low"><span class="font-medium truncate">${esc(s.name)}</span><span class="font-label-numeric font-semibold shrink-0">${fmtDate(d)} • ${money(share(s))}</span></div>`).join('') || '<p class="text-xs text-outline">Nothing due this week.</p>';
   $('#hdr-active').textContent = `${act.length} active`;
@@ -383,7 +410,7 @@ function calc() {
   $('#split-calc').textContent = n > 1 ? `${n} people: ${money(v / n)} each` : `Solo: ${money(v)}/mo`;
 }
 function chips() {
-  $('#chips').innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-on-primary shadow-sm">✓ Alex (you)</span>` +
+  $('#chips').innerHTML = `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-on-primary shadow-sm">✓ ${esc(cleanName(settings.name).split(' ')[0] || 'You')} (you)</span>` +
     ROOMMATES().map(n => `<button type="button" data-act="chip" data-m="${esc(n)}" aria-pressed="${picked.has(n)}" class="px-2.5 py-1 rounded-full text-xs font-medium ${picked.has(n) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container'}">${picked.has(n) ? '✓' : '+'} ${esc(n)}</button>`).join('');
   calc();
 }
@@ -412,7 +439,9 @@ $('#form').addEventListener('submit', e => {
   e.preventDefault();
   const name = $('#f-name').value.trim(), cost = parseFloat($('#f-cost').value), trial = $('#f-trial').checked;
   if (!name || !(cost > 0)) return;
-  subs.push({id: Date.now().toString(36), name, cat: $('#f-cat').value, cost, trial, date: trial ? $('#f-trial-date').value : $('#f-date').value, members: Object.fromEntries([...picked].map(n => [n, false]))});
+  const date = trial ? $('#f-trial-date').value : $('#f-date').value;
+  if (!DATE_RE.test(date) || Number.isNaN(parse(date).getTime())) { toast('Enter a valid date.', 'error'); return; }
+  subs.push({id: Date.now().toString(36), name, cat: $('#f-cat').value, cost, trial, date, billDay: parse(date).getDate(), members: Object.fromEntries([...picked].map(n => [n, false]))});
   save(); closeModal(); tab = 'all'; cat = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = ''); $('#cat-filter').value = 'all'; render();
   toast(`Added "${name}"`);
 });
@@ -424,7 +453,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (el) {
     const act = el.dataset.act, id = el.dataset.id, name = el.dataset.m, s = subs.find(x => x.id === (id || sel));
     const unpaid = [];
-    subs.forEach(x => Object.entries(x.members).forEach(([m, p]) => { if (!p) unpaid.push({x, m}); }));
+    subs.filter(x => !x.trial).forEach(x => Object.entries(x.members).forEach(([m, p]) => { if (!p) unpaid.push({x, m}); }));
     if ((act === 'nav' && el.dataset.page === 'dashboard') || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
     switch (act) {
       case 'open': openModal(); break;
@@ -440,10 +469,10 @@ case 'nav': { const target=el.dataset.page; if(target==='dashboard'){ e.preventD
       case 'remove': if (s && confirm(`${s.trial ? 'Cancel' : 'Remove'} "${s.name}"?`)) { subs = subs.filter(x => x !== s); save(); render(); toast(s.trial ? `Cancelled "${s.name}"` : `Removed "${s.name}"`, 'delete'); } break;
       case 'toggle': if (s) { s.members[name] = !s.members[name]; s.unpaidMonths = s.unpaidMonths || {}; s.unpaidMonths[name] = s.members[name] ? 0 : Math.max(1, Number(s.unpaidMonths[name]) || 1); save(); render(); toast(s.members[name] ? `${name} marked as settled` : `${name} marked as unpaid`, s.members[name] ? 'check_circle' : 'schedule'); } break;
       case 'chip': picked.has(name) ? picked.delete(name) : picked.add(name); chips(); break;
-      case 'nudge-one': if (s) copy(`Hey ${name}, here's the link to settle your ${money(share(s))} share for ${s.name}: ${PAY_LINK()}`, `Copied payment message for ${name}`); break;
-      case 'nudge-all': if (unpaid.length) copy('SetAndForget reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x))} for ${u.x.name}`).join('\n') + (PAY_LINK() ? `\nPay here: ${PAY_LINK()}` : ''), `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;
+      case 'nudge-one': if (s) copy(`Hey ${name}, ${PAY_LINK() ? `here's the link to settle your ${money(share(s) * owedMonths(s, name))} share for ${s.name}: ${PAY_LINK()}` : `a quick reminder to settle your ${money(share(s) * owedMonths(s, name))} share for ${s.name}.`}`, `Copied payment message for ${name}`); break;
+      case 'nudge-all': if (unpaid.length) copy('SetAndForget reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x) * owedMonths(u.x, u.m))} for ${u.x.name}`).join('\n') + (PAY_LINK() ? `\nPay here: ${PAY_LINK()}` : ''), `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;
       case 'copy-pay': if(PAY_LINK()) copy(PAY_LINK(), 'Payment link copied'); else toast('Add a payment link in Settings first.', 'error'); break;
-      case 'copy-ledger': if (s) copy(`${s.name} (${money(s.cost)}/mo) · ${money(share(s))} per person\n${settings.name||'You'}: Paid\n` + Object.entries(s.members).map(([m, p]) => `${m}: ${p ? 'Paid' : money(share(s)) + ' due'}`).join('\n') + (PAY_LINK() ? `\nPay here: ${PAY_LINK()}` : ''), 'Split ledger copied'); break;
+      case 'copy-ledger': if (s) copy(`${s.name} (${money(s.cost)}/mo) · ${money(share(s))} per person\n${cleanName(settings.name) || 'You'}: Paid\n` + Object.entries(s.members).map(([m, p]) => `${m}: ${p ? 'Paid' : money(share(s)) + ' due'}`).join('\n') + (PAY_LINK() ? `\nPay here: ${PAY_LINK()}` : ''), 'Split ledger copied'); break;
     }
     return;
   }
@@ -466,12 +495,21 @@ render();
 // Keep this tab synchronized with updates made by Settings, Group Splits, or another dashboard tab.
 window.addEventListener('storage', event => {
   if (!event.key || event.key === KEY || event.key === SETTINGS_KEY || event.key === 'SetAndForget.settings.v1' || event.key === 'SetAndForget.profile') {
-    try { const fresh=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(fresh)) subs=fresh; } catch {}
+    try { const fresh=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(fresh)) subs=sanitize(fresh); } catch {}
     refreshSettingsUI(); render();
   }
 });
-// Weekly summary preference is respected without claiming a real automated charge is queued.
-if(settings.weeklySummary === true) { try { const stamp=localStorage.getItem('SetAndForget.weeklySummary.last'); const todayKey=iso(today()); if(stamp!==todayKey){ localStorage.setItem('SetAndForget.weeklySummary.last',todayKey); toast('Weekly summary is enabled. Review your dashboard for the latest totals.', 'summarize'); } } catch {} }
+// Refresh when returning via the browser Back/Forward cache.
+window.addEventListener('pageshow', e => {
+  if (!e.persisted) return;
+  try { const fresh=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(fresh)) subs=sanitize(fresh); } catch {}
+  refreshSettingsUI(); render();
+});
+// Show the icon font only once it has loaded (avoids raw text like "call_split").
+(() => { const done = () => document.documentElement.classList.remove('icons-pending');
+  try { Promise.race([document.fonts.load('24px "Material Symbols Outlined"'), new Promise(r => setTimeout(r, 3000))]).then(done, done); } catch { done(); } })();
+// Weekly summary: at most once every 7 days.
+if(settings.weeklySummary === true) { try { const stamp=localStorage.getItem('SetAndForget.weeklySummary.last'); const last=stamp && DATE_RE.test(stamp) ? parse(stamp) : null; if(!last || Math.round((today()-last)/864e5) >= 7){ localStorage.setItem('SetAndForget.weeklySummary.last',iso(today())); toast('Weekly summary is enabled. Review your dashboard for the latest totals.', 'summarize'); } } catch {} }
 })();
 </script>
 </body>

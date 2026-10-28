@@ -1,272 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f8f9ff">
-<title>SetAndForget — Settings</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SetAndForget – Settings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=block" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
+<style>
+html{scroll-behavior:smooth;scroll-padding-top:84px}body{overscroll-behavior:none}
+section[id]{scroll-margin-top:84px}
+:focus-visible{outline:2px solid #5046e5;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config={theme:{extend:{colors:{surface:"#f8f9ff",ink:"#0b1c30",muted:"#64677a",line:"#e4e8f2",primary:"#3625cd",primary2:"#5046e5",mint:"#d9fbe9",danger:"#b42318"},fontFamily:{headline:["Geist","Inter","sans-serif"],body:["Inter","sans-serif"],mono:["JetBrains Mono","monospace"]},boxShadow:{soft:"0 8px 30px rgba(23,35,79,.05)"}}}}
+tailwind.config={theme:{extend:{
+colors:{"surface":"#f8f9ff","surface-dim":"#cbdbf5","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","surface-container":"#e5eeff","surface-container-high":"#dce9ff","surface-container-highest":"#d3e4fe","on-surface":"#0b1c30","on-surface-variant":"#464555","outline":"#777587","primary":"#3625cd","primary-container":"#5046e5","on-primary":"#ffffff","secondary":"#006c49","secondary-container":"#6cf8bb","on-secondary-container":"#00714d","secondary-fixed":"#6ffbbe","on-secondary-fixed":"#002113","tertiary":"#684000","tertiary-fixed":"#ffddb8","on-tertiary-fixed-variant":"#653e00","error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a","inverse-surface":"#213145","inverse-on-surface":"#eaf1ff"},
+fontFamily:{"headline-xl":["Geist","Inter","sans-serif"],"headline-lg":["Geist","Inter","sans-serif"],"headline-md":["Geist","Inter","sans-serif"],"headline-sm":["Geist","Inter","sans-serif"],"body-md":["Inter","sans-serif"],"body-sm":["Inter","sans-serif"],"label-caps":["Inter","sans-serif"],"label-numeric":["JetBrains Mono","monospace"]},
+fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontWeight:"600"}],"headline-lg":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["22px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px"}],"body-sm":["12px",{lineHeight:"16px"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}],"label-numeric":["13px",{lineHeight:"16px",letterSpacing:"-0.02em",fontWeight:"500"}]}
+}}}
 </script>
-<style>
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{font-family:Inter,sans-serif}
-:focus-visible{outline:3px solid #a5a0ff;outline-offset:2px}
-.field{width:100%;border:1px solid #dfe4ef;border-radius:12px;padding:11px 13px;background:#fff;color:#0b1c30;font-size:14px;transition:border-color .15s,box-shadow .15s}
-.field:focus{outline:none;border-color:#7165e8;box-shadow:0 0 0 3px #5046e51a}
-.switch{appearance:none;width:42px;height:24px;border-radius:999px;background:#d9deea;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
-.switch:before{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 3px #0002;transition:transform .2s}
-.switch:checked{background:#5046e5}.switch:checked:before{transform:translateX(18px)}
-.navlink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#64677a;font-size:13px;font-weight:600}
-.navlink:hover{background:#f1f3ff;color:#3625cd}.navlink.active{background:#eeedff;color:#3625cd}
-.symbol{font-family:"Material Symbols Outlined";font-weight:normal;font-style:normal;font-size:20px;line-height:1;display:inline-block;white-space:nowrap;direction:ltr;font-feature-settings:"liga";-webkit-font-feature-settings:"liga";-webkit-font-smoothing:antialiased}
-@media(max-width:760px){.layout{grid-template-columns:1fr!important}.sidebar{position:static!important}.side-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.side-nav .navlink{font-size:12px;padding:9px}.side-nav .navlink .symbol{font-size:18px}}
-</style>
 </head>
-<body class="bg-surface text-ink antialiased">
-<header class="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur-xl">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-[68px] flex items-center justify-between gap-4">
-    <a href="dashboard.html" class="flex items-center gap-3 min-w-0">
-      <span class="w-9 h-9 rounded-xl bg-primary2 text-white flex items-center justify-center shadow-sm"><span class="symbol">call_split</span></span>
-      <span class="font-headline font-bold text-[17px] tracking-tight">SetAndForget</span>
-    </a>
-    <nav class="hidden lg:flex items-center gap-1">
-      <a href="dashboard.html" class="px-3 py-2 rounded-lg text-sm text-muted hover:bg-slate-50">Dashboard</a>
-      <a href="groupsplits.html" class="px-3 py-2 rounded-lg text-sm text-muted hover:bg-slate-50">Group Splits</a>
-      <a href="analytics.html" class="px-3 py-2 rounded-lg text-sm text-muted hover:bg-slate-50">Analytics</a>
-      <a href="settings.html" aria-current="page" class="px-3 py-2 rounded-lg text-sm font-semibold text-primary bg-[#eeedff]">Settings</a>
-    </nav>
-    <div class="flex items-center gap-2.5">
-      <span class="hidden sm:inline text-xs text-muted">Personal workspace</span>
-      <span id="top-avatar" class="w-9 h-9 rounded-full bg-[#eeedff] text-primary font-bold text-xs flex items-center justify-center">YA</span>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+
+<header class="fixed top-0 inset-x-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,.04)]">
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 sm:gap-8 min-w-0">
+      <button type="button" data-act="menu" id="btn-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-m" class="xl:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-xl">call_split</span></span>
+        <span class="font-headline-sm text-headline-sm font-bold">SetAndForget</span>
+        <span class="hidden sm:inline px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps uppercase">Active</span>
+      </div>
+      <nav id="nav" class="hidden xl:flex items-center gap-1" aria-label="Primary"></nav>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button type="button" data-act="bell" aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span id="bell-count" class="absolute top-1 right-1 hidden h-4 min-w-4 px-1 items-center justify-center rounded-full bg-error text-on-error font-label-numeric text-[10px] font-bold"></span>
+      </button>
+      <a href="dashboard.html" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm transition-all"><span class="material-symbols-outlined text-base">add</span>Add subscription</a>
+      <div class="flex items-center gap-2 pl-1">
+        <span id="profile-initials" class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">U</span>
+        <div class="hidden lg:flex flex-col leading-none"><span id="profile-name" class="text-body-sm font-semibold">Your account</span><span id="hdr-active" class="font-label-numeric text-[11px] text-outline"></span></div>
+      </div>
     </div>
   </div>
+  <div id="nav-m" class="hidden xl:hidden border-t border-surface-container bg-surface-container-lowest px-4 py-2"></div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-7 sm:py-10">
-  <div class="mb-8">
-    <div class="flex items-center gap-2 text-xs font-semibold text-primary mb-2"><span class="symbol text-[16px]">tune</span> WORKSPACE PREFERENCES</div>
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-      <div><h1 class="font-headline text-3xl sm:text-[36px] leading-tight font-bold tracking-tight">Settings</h1><p class="mt-2 text-sm text-muted max-w-2xl">Personalize your account, manage reminders, and choose how SetAndForget handles your subscriptions and shared bills.</p></div>
-      <div class="flex items-center gap-2 text-xs text-muted"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Saved in this browser</span></div>
+<main class="w-full pt-16 min-h-screen">
+  <div id="toasts" class="fixed bottom-24 right-4 sm:right-6 z-[70] flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+      <div><h1 class="font-headline-lg text-headline-lg">Settings</h1><p class="text-body-sm text-on-surface-variant">Your profile, defaults, reminders and backups</p></div>
+      <span class="font-label-numeric text-[11px] text-outline flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span>Saved in this browser</span>
+    </div>
+
+    <div id="status" role="status" aria-live="polite" class="hidden rounded-xl px-4 py-3 text-body-sm font-medium"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <aside class="lg:col-span-3 lg:sticky lg:top-20 space-y-4">
+        <nav class="rounded-xl bg-surface-container-lowest p-3 shadow-sm" aria-label="Settings sections">
+          <div class="px-3 pt-1 pb-2 text-label-caps font-label-caps uppercase text-outline">Sections</div>
+          <div id="side-nav" class="grid grid-cols-2 lg:grid-cols-1 gap-1">
+            <a href="#profile" class="side-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm font-semibold bg-surface-container text-primary"><span class="material-symbols-outlined text-lg">person</span>Profile</a>
+            <a href="#preferences" class="side-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"><span class="material-symbols-outlined text-lg">tune</span>Preferences</a>
+            <a href="#notifications" class="side-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"><span class="material-symbols-outlined text-lg">notifications</span>Notifications</a>
+            <a href="#payments" class="side-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"><span class="material-symbols-outlined text-lg">payments</span>Payment methods</a>
+            <a href="#data" class="side-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"><span class="material-symbols-outlined text-lg">database</span>Data &amp; backup</a>
+          </div>
+        </nav>
+        <div class="rounded-xl bg-inverse-surface text-inverse-on-surface p-4 shadow-md relative overflow-hidden">
+          <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-primary-container/20 blur-2xl pointer-events-none"></div>
+          <span class="material-symbols-outlined text-secondary-fixed relative">shield_lock</span>
+          <p class="mt-2 text-xs font-semibold relative">Your data stays local</p>
+          <p class="mt-1 text-[11px] leading-relaxed text-inverse-on-surface/70 relative">Settings and app data are stored in this browser's localStorage only.</p>
+        </div>
+      </aside>
+
+      <form id="settings-form" class="lg:col-span-9 min-w-0 space-y-6" novalidate>
+
+        <section id="profile" class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden" aria-label="Profile">
+          <div class="px-5 py-4 flex items-start gap-3 border-b border-surface-container">
+            <span class="w-9 h-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">person</span></span>
+            <div><h2 class="font-headline-sm text-sm font-semibold">Profile</h2><p class="text-body-sm text-on-surface-variant">Shown across the dashboard, group splits and payment reminders.</p></div>
+          </div>
+          <div class="p-5 space-y-5">
+            <div class="flex items-center gap-4 rounded-lg bg-surface-container-low p-4">
+              <div id="profile-avatar" class="w-12 h-12 rounded-xl bg-primary-container text-on-primary text-base font-bold flex items-center justify-center">U</div>
+              <div class="min-w-0"><p id="profile-preview" class="text-sm font-semibold truncate">Your account</p><p class="text-xs text-outline">Profile preview</p></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label for="name" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Display name</label>
+                <input id="name" maxlength="80" required placeholder="e.g. Alex Chen" autocomplete="name" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container">
+                <p class="text-[11px] text-outline mt-1">Required. Your first name is how you appear in Group Splits and reminders.</p></div>
+              <div><label for="paymentLink" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Payment reminder link</label>
+                <input id="paymentLink" type="url" maxlength="500" placeholder="https://example.com/pay" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container">
+                <p class="text-[11px] text-outline mt-1">Optional. Included in copied reminders.</p></div>
+            </div>
+            <div><label for="roommates" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Roommates / group members</label>
+              <textarea id="roommates" rows="4" maxlength="2000" placeholder="One name per line" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm resize-y focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container"></textarea>
+              <p class="text-[11px] text-outline mt-1">One person per line. These names appear as choices when you add a subscription, and Group Splits adds them as members of your active group. Existing bills are not renamed or changed.</p></div>
+          </div>
+        </section>
+
+        <section id="preferences" class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden" aria-label="Preferences">
+          <div class="px-5 py-4 flex items-start gap-3 border-b border-surface-container">
+            <span class="w-9 h-9 rounded-lg bg-surface-container-low text-secondary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">tune</span></span>
+            <div><h2 class="font-headline-sm text-sm font-semibold">Preferences</h2><p class="text-body-sm text-on-surface-variant">Defaults used when adding a subscription.</p></div>
+          </div>
+          <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label for="currency" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Currency</label>
+              <select id="currency" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container">
+                <option value="USD">USD — US Dollar ($)</option><option value="INR">INR — Indian Rupee (₹)</option><option value="EUR">EUR — Euro (€)</option><option value="GBP">GBP — British Pound (£)</option><option value="CAD">CAD — Canadian Dollar (CA$)</option><option value="AUD">AUD — Australian Dollar (A$)</option><option value="JPY">JPY — Japanese Yen (¥)</option></select>
+              <p class="text-[11px] text-outline mt-1">Changes the symbol on every page. Existing amounts are not converted.</p></div>
+            <div><label for="defaultCategory" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Default category</label>
+              <select id="defaultCategory" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-container">
+                <option value="Streaming">Streaming</option><option value="Software">Software &amp; Productivity</option><option value="AI Tools">AI Tools</option><option value="Cloud">Cloud Storage</option><option value="Utilities">Utilities &amp; Wifi</option></select>
+              <p class="text-[11px] text-outline mt-1">Preselected in the dashboard's Add subscription form.</p></div>
+          </div>
+        </section>
+
+        <section id="notifications" class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden" aria-label="Notifications">
+          <div class="px-5 py-4 flex items-start gap-3 border-b border-surface-container">
+            <span class="w-9 h-9 rounded-lg bg-surface-container-low text-tertiary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">notifications_active</span></span>
+            <div><h2 class="font-headline-sm text-sm font-semibold">Notifications &amp; reminders</h2><p class="text-body-sm text-on-surface-variant">Choose what the app highlights. Nothing is sent by email or push.</p></div>
+          </div>
+          <div class="px-5 divide-y divide-surface-container">
+            <div class="flex items-center gap-4 py-4"><div class="min-w-0 flex-1"><label for="trialAlerts" class="text-sm font-semibold cursor-pointer">Free-trial alerts</label><p class="text-xs text-on-surface-variant mt-0.5">Banner, bell count and insight for trials close to ending.</p></div>
+              <span class="relative inline-flex items-center shrink-0"><input id="trialAlerts" type="checkbox" class="sr-only peer"><span class="block w-9 h-5 bg-surface-container-highest rounded-full peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span></span></div>
+            <div class="flex items-center gap-4 py-4"><div class="min-w-0 flex-1"><label for="unpaidAlerts" class="text-sm font-semibold cursor-pointer">Unpaid-balance alerts</label><p class="text-xs text-on-surface-variant mt-0.5">Bell count and insight for outstanding roommate shares.</p></div>
+              <span class="relative inline-flex items-center shrink-0"><input id="unpaidAlerts" type="checkbox" class="sr-only peer"><span class="block w-9 h-5 bg-surface-container-highest rounded-full peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span></span></div>
+            <div class="flex items-center gap-4 py-4"><div class="min-w-0 flex-1"><label for="dueSoonAlerts" class="text-sm font-semibold cursor-pointer">Group Splits due-soon toast</label><p class="text-xs text-on-surface-variant mt-0.5">Show a toast in Group Splits when a bill with unpaid shares is about to renew.</p></div>
+              <span class="relative inline-flex items-center shrink-0"><input id="dueSoonAlerts" type="checkbox" class="sr-only peer"><span class="block w-9 h-5 bg-surface-container-highest rounded-full peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span></span></div>
+            <div class="flex items-center gap-4 py-4"><div class="min-w-0 flex-1"><label for="weeklySummary" class="text-sm font-semibold cursor-pointer">Weekly spending summary</label><p class="text-xs text-on-surface-variant mt-0.5">Shows a summary line on Analytics and a toast on the dashboard. No email or push is sent.</p></div>
+              <span class="relative inline-flex items-center shrink-0"><input id="weeklySummary" type="checkbox" class="sr-only peer"><span class="block w-9 h-5 bg-surface-container-highest rounded-full peer-checked:bg-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span></span></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5">
+              <div><label for="trialDays" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Trial alert window</label>
+                <div class="relative"><input id="trialDays" type="number" min="0" max="365" value="7" class="w-full pl-3 pr-20 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"><span class="absolute right-3 top-2 text-xs text-outline">days ahead</span></div>
+                <p class="text-[11px] text-outline mt-1">Used by the dashboard and Analytics.</p></div>
+              <div><label for="unpaidDays" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Group Splits due-soon window</label>
+                <div class="relative"><input id="unpaidDays" type="number" min="0" max="365" value="2" class="w-full pl-3 pr-20 py-2 bg-surface-container-low rounded-lg font-label-numeric text-sm focus:outline-none focus:ring-2 focus:ring-primary-container"><span class="absolute right-3 top-2 text-xs text-outline">days ahead</span></div>
+                <p class="text-[11px] text-outline mt-1">How early the Group Splits toast warns about unpaid shares.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="payments" class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden" aria-label="Payment methods">
+          <div class="px-5 py-4 flex items-start gap-3 border-b border-surface-container">
+            <span class="w-9 h-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">payments</span></span>
+            <div><h2 class="font-headline-sm text-sm font-semibold">Payment methods</h2><p class="text-body-sm text-on-surface-variant">Included in settlement reminders you copy from Group Splits.</p></div>
+          </div>
+          <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label for="venmo" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Venmo username or URL</label>
+              <input id="venmo" maxlength="200" placeholder="@username or https://…" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container"></div>
+            <div><label for="zelle" class="block text-label-caps font-label-caps uppercase text-on-surface-variant mb-1">Zelle details</label>
+              <input id="zelle" maxlength="200" placeholder="Email or phone number" class="w-full px-3 py-2 bg-surface-container-low rounded-lg text-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container"></div>
+          </div>
+        </section>
+
+        <section id="data" class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden" aria-label="Data and backup">
+          <div class="px-5 py-4 flex items-start gap-3 border-b border-surface-container">
+            <span class="w-9 h-9 rounded-lg bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">database</span></span>
+            <div><h2 class="font-headline-sm text-sm font-semibold">Data &amp; backup</h2><p class="text-body-sm text-on-surface-variant">Back up before moving browsers or clearing site data.</p></div>
+          </div>
+          <div class="p-5 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div><p class="text-sm font-semibold">Export or restore a backup</p><p class="text-xs text-on-surface-variant mt-0.5 max-w-lg">The JSON file holds your settings, subscriptions and group-split data. Keep it somewhere private.</p></div>
+              <div class="flex flex-wrap gap-2 shrink-0">
+                <button type="button" id="export" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold">Export JSON</button>
+                <label for="import" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary text-body-sm font-semibold cursor-pointer">Import JSON</label>
+                <input id="import" type="file" accept=".json,application/json" class="sr-only">
+              </div>
+            </div>
+            <div class="pt-5 border-t border-surface-container flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div><p class="text-sm font-semibold">Reset preferences</p><p class="text-xs text-on-surface-variant mt-0.5">Restore default settings. Subscriptions and group bills are kept.</p></div>
+              <button type="button" id="reset" class="px-4 py-2 rounded-lg bg-error-container text-on-error-container hover:bg-error hover:text-on-error text-body-sm font-semibold transition-all shrink-0">Reset settings</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="sticky bottom-3 z-20 rounded-xl bg-surface-container-lowest/95 backdrop-blur-xl shadow-md p-3 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p id="dirty" class="text-xs text-on-surface-variant flex items-center gap-2"><span class="material-symbols-outlined text-base">info</span><span>Changes apply when you save.</span></p>
+          <div class="flex items-center gap-2 justify-end">
+            <button type="button" id="discard" class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-body-sm font-semibold">Discard changes</button>
+            <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-body-sm font-semibold shadow-sm flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">save</span>Save changes</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
-
-  <div id="status" role="status" aria-live="polite" class="hidden mb-5 rounded-xl px-4 py-3 text-sm font-medium"></div>
-
-  <div class="layout grid grid-cols-[230px_minmax(0,1fr)] gap-6 items-start">
-    <aside class="sidebar sticky top-[88px] rounded-2xl border border-line bg-white p-3 shadow-soft">
-      <div class="px-3 pt-2 pb-3 text-[10px] tracking-[.16em] font-bold text-slate-400">SETTINGS MENU</div>
-      <nav class="side-nav space-y-1">
-        <a class="navlink active" href="#profile"><span class="symbol">person</span>Profile</a>
-        <a class="navlink" href="#preferences"><span class="symbol">tune</span>Preferences</a>
-        <a class="navlink" href="#notifications"><span class="symbol">notifications</span>Notifications</a>
-        <a class="navlink" href="#payments"><span class="symbol">payments</span>Payment methods</a>
-        <a class="navlink" href="#data"><span class="symbol">database</span>Data & backup</a>
-      </nav>
-      <div class="mt-5 rounded-xl bg-[#f6f7ff] p-3.5">
-        <span class="symbol text-primary">shield_lock</span>
-        <p class="mt-2 text-xs font-semibold">Your data stays local</p>
-        <p class="mt-1 text-[11px] leading-relaxed text-muted">This demo stores settings and app data in your browser's localStorage.</p>
-      </div>
-    </aside>
-
-    <form id="settings-form" class="min-w-0 space-y-5">
-      <section id="profile" class="rounded-2xl border border-line bg-white shadow-soft overflow-hidden">
-        <div class="border-b border-line px-5 sm:px-7 py-5 flex items-start gap-3">
-          <span class="w-10 h-10 rounded-xl bg-[#eeedff] text-primary flex items-center justify-center shrink-0"><span class="symbol">person</span></span>
-          <div><h2 class="font-headline text-lg font-bold">Profile</h2><p class="text-sm text-muted mt-1">The details shown across your dashboard and group-split pages.</p></div>
-        </div>
-        <div class="p-5 sm:p-7 space-y-5">
-          <div class="flex items-center gap-4 rounded-xl bg-slate-50 border border-slate-100 p-4">
-            <div id="profile-avatar" class="w-14 h-14 rounded-2xl bg-primary2 text-white text-lg font-bold flex items-center justify-center">YA</div>
-            <div class="min-w-0"><p id="profile-preview" class="font-semibold truncate">Your account</p><p class="text-xs text-muted mt-1">Profile preview</p></div>
-            <span class="ml-auto text-[10px] font-bold uppercase tracking-wider text-muted bg-white border border-line px-2.5 py-1 rounded-full">Personal</span>
-          </div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <label class="block"><span class="text-sm font-semibold">Display name</span><input id="name" class="field mt-2" maxlength="80" required placeholder="e.g. Alex Chen"><span class="text-xs text-muted block mt-1.5">Used for greetings and payment reminders.</span></label>
-            <label class="block"><span class="text-sm font-semibold">Payment reminder link</span><input id="paymentLink" type="url" class="field mt-2" maxlength="500" placeholder="https://example.com/pay"><span class="text-xs text-muted block mt-1.5">Optional link included when you remind someone to pay.</span></label>
-          </div>
-          <label class="block"><span class="text-sm font-semibold">Roommates / group members</span><textarea id="roommates" class="field mt-2 resize-y" rows="4" maxlength="2000" placeholder="One name per line"></textarea><span class="text-xs text-muted block mt-1.5">One person per line. This list is a default for new splits; it does not rename people in existing bills.</span></label>
-        </div>
-      </section>
-
-      <section id="preferences" class="rounded-2xl border border-line bg-white shadow-soft overflow-hidden">
-        <div class="border-b border-line px-5 sm:px-7 py-5 flex items-start gap-3">
-          <span class="w-10 h-10 rounded-xl bg-[#e7f8ef] text-emerald-700 flex items-center justify-center shrink-0"><span class="symbol">tune</span></span>
-          <div><h2 class="font-headline text-lg font-bold">Preferences</h2><p class="text-sm text-muted mt-1">Set the defaults used when adding a subscription.</p></div>
-        </div>
-        <div class="p-5 sm:p-7 grid sm:grid-cols-2 gap-5">
-          <label class="block"><span class="text-sm font-semibold">Currency</span><select id="currency" class="field mt-2"><option value="INR">INR — Indian Rupee (₹)</option><option value="USD">USD — US Dollar ($)</option><option value="EUR">EUR — Euro (€)</option><option value="GBP">GBP — British Pound (£)</option><option value="CAD">CAD — Canadian Dollar (CA$)</option><option value="AUD">AUD — Australian Dollar (A$)</option><option value="JPY">JPY — Japanese Yen (¥)</option></select><span class="text-xs text-muted block mt-1.5">Display preference only; it does not convert existing amounts.</span></label>
-          <label class="block"><span class="text-sm font-semibold">Default subscription category</span><select id="defaultCategory" class="field mt-2"><option value="Streaming">Streaming</option><option value="Software">Software</option><option value="AI Tools">AI Tools</option><option value="Cloud">Cloud</option><option value="Utilities">Utilities</option><option value="Other">Other</option></select><span class="text-xs text-muted block mt-1.5">Preselect this category when adding a subscription on supported pages.</span></label>
-        </div>
-      </section>
-
-      <section id="notifications" class="rounded-2xl border border-line bg-white shadow-soft overflow-hidden">
-        <div class="border-b border-line px-5 sm:px-7 py-5 flex items-start gap-3">
-          <span class="w-10 h-10 rounded-xl bg-[#fff3e5] text-amber-700 flex items-center justify-center shrink-0"><span class="symbol">notifications_active</span></span>
-          <div><h2 class="font-headline text-lg font-bold">Notifications & reminders</h2><p class="text-sm text-muted mt-1">Choose which items should be highlighted in your app.</p></div>
-        </div>
-        <div class="px-5 sm:px-7">
-          <div class="flex items-center gap-4 py-5 border-b border-line"><div class="min-w-0 flex-1"><label for="trialAlerts" class="text-sm font-semibold cursor-pointer">Free-trial alerts</label><p class="text-xs text-muted mt-1">Highlight trials that are close to ending.</p></div><input id="trialAlerts" type="checkbox" class="switch" checked></div>
-          <div class="flex items-center gap-4 py-5 border-b border-line"><div class="min-w-0 flex-1"><label for="unpaidAlerts" class="text-sm font-semibold cursor-pointer">Unpaid-balance alerts</label><p class="text-xs text-muted mt-1">Show reminders for outstanding group shares.</p></div><input id="unpaidAlerts" type="checkbox" class="switch" checked></div>
-          <div class="flex items-center gap-4 py-5 border-b border-line"><div class="min-w-0 flex-1"><label for="dueSoonAlerts" class="text-sm font-semibold cursor-pointer">Upcoming payment alerts</label><p class="text-xs text-muted mt-1">Highlight subscriptions and bills approaching their due date.</p></div><input id="dueSoonAlerts" type="checkbox" class="switch" checked></div>
-          <div class="flex items-center gap-4 py-5 border-b border-line"><div class="min-w-0 flex-1"><label for="weeklySummary" class="text-sm font-semibold cursor-pointer">Weekly spending summary</label><p class="text-xs text-muted mt-1">Show the weekly summary where the dashboard supports it. No scheduled email or push notification is sent by this browser-only demo.</p></div><input id="weeklySummary" type="checkbox" class="switch"></div>
-          <div class="grid sm:grid-cols-2 gap-4 py-5">
-            <label class="block"><span class="text-sm font-semibold">Trial alert window</span><div class="relative mt-2"><input id="trialDays" type="number" min="0" max="365" class="field pr-16" value="7"><span class="absolute right-3 top-3 text-xs text-muted">days ahead</span></div></label>
-            <label class="block"><span class="text-sm font-semibold">Unpaid reminder window</span><div class="relative mt-2"><input id="unpaidDays" type="number" min="0" max="365" class="field pr-16" value="7"><span class="absolute right-3 top-3 text-xs text-muted">days</span></div></label>
-          </div>
-        </div>
-      </section>
-
-      <section id="payments" class="rounded-2xl border border-line bg-white shadow-soft overflow-hidden">
-        <div class="border-b border-line px-5 sm:px-7 py-5 flex items-start gap-3">
-          <span class="w-10 h-10 rounded-xl bg-[#e9f3ff] text-blue-700 flex items-center justify-center shrink-0"><span class="symbol">payments</span></span>
-          <div><h2 class="font-headline text-lg font-bold">Payment methods & group balances</h2><p class="text-sm text-muted mt-1">Keep your payment details handy for settlement reminders.</p></div>
-        </div>
-        <div class="p-5 sm:p-7 space-y-5">
-          <div class="grid sm:grid-cols-2 gap-4">
-            <label class="block"><span class="text-sm font-semibold">Venmo username or URL</span><input id="venmo" class="field mt-2" maxlength="200" placeholder="@username or https://…"></label>
-            <label class="block"><span class="text-sm font-semibold">Zelle details</span><input id="zelle" class="field mt-2" maxlength="200" placeholder="Email or phone number"></label>
-          </div>
-          <div class="flex items-center gap-4 rounded-xl border border-line p-4"><div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center"><span class="symbol text-muted">check_circle</span></div><div class="flex-1"><p class="text-sm font-semibold">Auto-clear settled balances</p><p class="text-xs text-muted mt-1">Allow supported pages to clear a balance after payment is marked as received. This never transfers money automatically.</p></div><input id="autoClearBalances" type="checkbox" class="switch"></div>
-        </div>
-      </section>
-
-      <section id="data" class="rounded-2xl border border-line bg-white shadow-soft overflow-hidden">
-        <div class="border-b border-line px-5 sm:px-7 py-5 flex items-start gap-3">
-          <span class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0"><span class="symbol">database</span></span>
-          <div><h2 class="font-headline text-lg font-bold">Data & backup</h2><p class="text-sm text-muted mt-1">Back up your settings and local app data before moving browsers.</p></div>
-        </div>
-        <div class="p-5 sm:p-7">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            <div><p class="text-sm font-semibold">Export or restore a backup</p><p class="text-xs text-muted mt-1 max-w-lg">The JSON backup contains settings, subscriptions and group-split data found in this browser. Keep it somewhere private.</p></div>
-            <div class="flex flex-wrap gap-2 shrink-0"><button type="button" id="export" class="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Export JSON</button><label for="import" class="rounded-xl bg-[#eeedff] text-primary px-4 py-2.5 text-sm font-semibold hover:bg-[#e4e2ff] cursor-pointer">Import JSON</label><input id="import" type="file" accept=".json,application/json" class="hidden"></div>
-          </div>
-          <div class="mt-5 border-t border-line pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div><p class="text-sm font-semibold">Reset preferences</p><p class="text-xs text-muted mt-1">Restore default settings without deleting your subscriptions or group bills.</p></div>
-            <button type="button" id="reset" class="rounded-xl border border-rose-200 text-rose-700 px-4 py-2.5 text-sm font-semibold hover:bg-rose-50">Reset settings</button>
-          </div>
-        </div>
-      </section>
-
-      <div class="sticky bottom-3 z-20 rounded-2xl border border-line bg-white/95 backdrop-blur-xl shadow-soft p-3 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p class="text-xs text-muted flex items-center gap-2"><span class="symbol text-[17px]">info</span> Changes are applied when you save.</p>
-        <div class="flex items-center gap-2 justify-end"><button type="button" id="discard" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-muted hover:bg-slate-100">Discard changes</button><button type="submit" class="px-5 py-2.5 rounded-xl bg-primary2 hover:bg-primary text-white text-sm font-semibold shadow-sm flex items-center gap-2"><span class="symbol text-[18px]">save</span>Save changes</button></div>
-      </div>
-    </form>
-  </div>
-  <footer class="text-center text-xs text-slate-400 py-8">SetAndForget · Simple subscriptions, clearer shared spending.</footer>
 </main>
+
+<footer class="bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,.02)]">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-3 text-on-surface-variant text-body-sm">
+    <div>© <span id="yr"></span> SetAndForget Technologies Inc. All rights reserved.</div>
+    <div class="flex items-center gap-5"><a href="#" class="hover:text-on-surface">Privacy policy</a><a href="#" class="hover:text-on-surface">Terms of service</a><a href="#" class="hover:text-on-surface">Support</a></div>
+  </div>
+</footer>
 
 <script>
 (() => {
-  'use strict';
-  const SETTINGS_KEY='SetAndForget.settings';
-  const LEGACY_KEYS=['SetAndForget.settings.v1','SetAndForget.profile'];
-  const DATA_KEYS=['SetAndForget.v2','SetAndForget.groups.v1'];
-  const DEFAULTS={name:'Your account',paymentLink:'',currency:'INR',defaultCategory:'Streaming',roommates:[],venmo:'',zelle:'',trialAlerts:true,unpaidAlerts:true,trialDays:7,unpaidDays:7,dueSoonAlerts:true,weeklySummary:false,autoClearBalances:false};
-  const $=id=>document.getElementById(id);
-  let savedSnapshot='';
-  const string=(v)=>typeof v==='string'?v:'';
-  function rawSettings(){
-    let merged={};
-    for(const key of [...LEGACY_KEYS,SETTINGS_KEY]){
-      try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v&&typeof v==='object'&&!Array.isArray(v))merged={...merged,...v};}catch{}
+'use strict';
+const $ = id => document.getElementById(id);
+const SETTINGS_KEY = 'SetAndForget.settings';
+const LEGACY_KEYS = ['SetAndForget.settings.v1', 'SetAndForget.profile'];
+const DATA_KEYS = ['SetAndForget.v2', 'SetAndForget.groups.v1'];
+const SUBS_KEY = 'SetAndForget.v2';
+const CATEGORIES = ['Streaming', 'Software', 'AI Tools', 'Cloud', 'Utilities'];
+const CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY'];
+const PLACEHOLDER_NAME = 'Your account'; // legacy default; never treated as a real name
+// Defaults match the dashboard, Group Splits and Analytics pages.
+const DEFAULTS = {name:'', paymentLink:'', currency:'USD', defaultCategory:'Streaming', roommates:['Marcus','Sarah','David'], venmo:'', zelle:'', trialAlerts:true, unpaidAlerts:true, trialDays:7, unpaidDays:2, dueSoonAlerts:true, weeklySummary:false, autoClearBalances:false};
+const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','analytics.html'],['Settings','#']];
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const str = v => typeof v === 'string' ? v : '';
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const parse = s => new Date(s + 'T00:00');
+const inDays = d => Math.round((d - today()) / 864e5);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+let snapshot = '';
+
+function toast(msg, icon = 'check_circle') {
+  const t = document.createElement('div');
+  t.className = 'pointer-events-auto bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs transition-all duration-300 translate-y-4 opacity-0';
+  t.innerHTML = `<span class="material-symbols-outlined text-sm text-secondary-fixed">${esc(icon)}</span><span>${esc(msg)}</span>`;
+  $('toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.remove('translate-y-4', 'opacity-0'));
+  setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => t.remove(), 300); }, 3200);
+}
+
+function rawSettings() {
+  let merged = {};
+  for (const key of [...LEGACY_KEYS, SETTINGS_KEY]) {
+    try { const v = JSON.parse(localStorage.getItem(key) || 'null'); if (v && typeof v === 'object' && !Array.isArray(v)) merged = {...merged, ...v}; } catch {}
+  }
+  if (!Object.prototype.hasOwnProperty.call(merged, 'dueSoonAlerts') && typeof merged.auto === 'boolean') merged.dueSoonAlerts = merged.auto;
+  return {...DEFAULTS, ...merged};
+}
+function cleanName(v) {
+  const n = str(v).trim().slice(0, 80);
+  return n === PLACEHOLDER_NAME ? '' : n;
+}
+function normalize(s) {
+  const roommates = (Array.isArray(s.roommates) ? s.roommates : String(s.roommates || '').split(/\r?\n/)).map(v => String(v).trim().slice(0, 60)).filter(Boolean);
+  const unique = [...new Map(roommates.map(n => [n.toLowerCase(), n])).values()].slice(0, 30);
+  const days = (v, d) => { const n = Number(v); return Math.max(0, Math.min(365, Number.isFinite(n) ? Math.floor(n) : d)); };
+  return {...DEFAULTS, ...s,
+    name: cleanName(s.name || s.fullName || s.full_name),
+    paymentLink: str(s.paymentLink).trim().slice(0, 500),
+    currency: CURRENCIES.includes(s.currency) ? s.currency : DEFAULTS.currency,
+    defaultCategory: CATEGORIES.includes(s.defaultCategory) ? s.defaultCategory : DEFAULTS.defaultCategory,
+    roommates: unique, venmo: str(s.venmo).trim().slice(0, 200), zelle: str(s.zelle).trim().slice(0, 200),
+    trialDays: days(s.trialDays, 7), unpaidDays: days(s.unpaidDays, 2),
+    trialAlerts: s.trialAlerts !== false, unpaidAlerts: s.unpaidAlerts !== false, dueSoonAlerts: s.dueSoonAlerts !== false,
+    weeklySummary: s.weeklySummary === true, autoClearBalances: s.autoClearBalances === true};
+}
+function getForm() {
+  return normalize({...rawSettings(), name:$('name').value, paymentLink:$('paymentLink').value, roommates:$('roommates').value.split(/\r?\n/),
+    currency:$('currency').value, defaultCategory:$('defaultCategory').value, venmo:$('venmo').value, zelle:$('zelle').value,
+    trialAlerts:$('trialAlerts').checked, unpaidAlerts:$('unpaidAlerts').checked, dueSoonAlerts:$('dueSoonAlerts').checked, weeklySummary:$('weeklySummary').checked,
+    trialDays:$('trialDays').value, unpaidDays:$('unpaidDays').value});
+}
+const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('') || 'U';
+
+function showStatus(message, ok = true) {
+  const el = $('status'); el.textContent = message;
+  el.className = 'rounded-xl px-4 py-3 text-body-sm font-medium ' + (ok ? 'bg-secondary-container/40 text-on-secondary-container' : 'bg-error-container text-on-error-container');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function updateDirty() {
+  const dirty = JSON.stringify(getForm()) !== snapshot;
+  $('dirty').lastElementChild.textContent = dirty ? 'You have unsaved changes.' : 'Changes apply when you save.';
+  $('dirty').firstElementChild.textContent = dirty ? 'edit_note' : 'info';
+}
+function updatePreview(name) {
+  const n = (name !== undefined ? name : $('name').value).trim();
+  const shown = n && n !== PLACEHOLDER_NAME ? n : PLACEHOLDER_NAME;
+  $('profile-preview').textContent = shown;
+  $('profile-avatar').textContent = initials(n && n !== PLACEHOLDER_NAME ? n : '');
+}
+// Header mirrors the other pages: it reflects the SAVED profile, bell and active count.
+function renderHeader() {
+  const s = normalize(rawSettings());
+  $('profile-name').textContent = s.name || PLACEHOLDER_NAME;
+  $('profile-initials').textContent = initials(s.name);
+  let subs = null; try { subs = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); } catch {}
+  if (!Array.isArray(subs)) subs = [];
+  const members = x => (x && x.members && typeof x.members === 'object' && !Array.isArray(x.members)) ? x.members : {};
+  const act = subs.filter(x => x && !x.trial), trials = subs.filter(x => x && x.trial);
+  $('hdr-active').textContent = `${act.length} active`;
+  const ending = s.trialAlerts ? trials.filter(x => x.date && inDays(parse(x.date)) <= s.trialDays).length : 0;
+  const unpaid = s.unpaidAlerts ? subs.reduce((n, x) => n + Object.values(members(x)).filter(p => !p).length, 0) : 0;
+  const alerts = ending + unpaid; renderHeader.alerts = {t: ending, u: unpaid};
+  const b = $('bell-count'); b.textContent = alerts; b.classList.toggle('hidden', !alerts); b.classList.toggle('flex', !!alerts);
+}
+function render() {
+  const s = normalize(rawSettings());
+  $('name').value = s.name; $('paymentLink').value = s.paymentLink; $('roommates').value = s.roommates.join('\n');
+  $('currency').value = s.currency; $('defaultCategory').value = s.defaultCategory; $('venmo').value = s.venmo; $('zelle').value = s.zelle;
+  for (const id of ['trialAlerts','unpaidAlerts','dueSoonAlerts','weeklySummary']) $(id).checked = !!s[id];
+  $('trialDays').value = s.trialDays; $('unpaidDays').value = s.unpaidDays;
+  updatePreview(s.name); renderHeader();
+  snapshot = JSON.stringify(getForm()); updateDirty();
+}
+function save() {
+  const nm = $('name');
+  if (!cleanName(nm.value)) { nm.setCustomValidity('Enter your name'); nm.reportValidity(); nm.setCustomValidity(''); showStatus('Add a display name so Group Splits and reminders know who you are.', false); nm.focus(); return; }
+  if (!$('settings-form').reportValidity()) return;
+  const s = getForm();
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    localStorage.setItem(LEGACY_KEYS[0], JSON.stringify(s));
+    render(); showStatus('Your settings have been saved.');
+  } catch { showStatus('Unable to save settings. Check that browser storage is available.', false); }
+}
+
+// ---- nav (same pattern as the other pages)
+const navHTML = NAV.map(([l, h]) => `<a href="${h}" ${l === 'Settings' ? 'aria-current="page" data-nav="Settings"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Settings' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
+$('nav').innerHTML = navHTML; $('nav-m').innerHTML = navHTML;
+$('yr').textContent = new Date().getFullYear();
+
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-nav="Settings"]');
+  if (n) { e.preventDefault(); window.scrollTo({top: 0}); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  if (el.dataset.act === 'menu') { const m = $('nav-m'); m.classList.toggle('hidden'); $('btn-menu').setAttribute('aria-expanded', !m.classList.contains('hidden')); }
+  if (el.dataset.act === 'bell') { const a = renderHeader.alerts || {t:0, u:0}; toast(`${plural(a.t, 'trial')} ending soon · ${plural(a.u, 'unpaid share')}`, 'notifications'); }
+});
+// side-nav highlight follows the section in view
+const links = [...document.querySelectorAll('.side-link')];
+function setActive(id) {
+  links.forEach(l => {
+    const on = l.getAttribute('href') === '#' + id;
+    l.classList.toggle('bg-surface-container', on); l.classList.toggle('text-primary', on);
+    l.classList.toggle('text-on-surface-variant', !on);
+    if (on) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current');
+  });
+}
+links.forEach(l => l.addEventListener('click', () => setActive(l.getAttribute('href').slice(1))));
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => { const v = es.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]; if (v) setActive(v.target.id); }, {rootMargin: '-80px 0px -60% 0px'});
+  ['profile','preferences','notifications','payments','data'].forEach(id => io.observe($(id)));
+}
+
+// ---- form events
+$('settings-form').addEventListener('submit', e => { e.preventDefault(); save(); });
+$('settings-form').addEventListener('input', () => { updatePreview(); updateDirty(); });
+$('settings-form').addEventListener('change', updateDirty);
+$('discard').addEventListener('click', () => { render(); showStatus('Unsaved changes were discarded.'); });
+window.addEventListener('beforeunload', e => { if (JSON.stringify(getForm()) !== snapshot) { e.preventDefault(); e.returnValue = ''; } });
+
+$('reset').addEventListener('click', () => {
+  if (!confirm('Reset all preferences to defaults? Your subscriptions and group bills will remain unchanged.')) return;
+  try {
+    const d = normalize(DEFAULTS);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(d)); localStorage.setItem(LEGACY_KEYS[0], JSON.stringify(d));
+    try { localStorage.removeItem(LEGACY_KEYS[1]); } catch {}
+    render(); showStatus('Settings restored to defaults. Add your name and save to finish setting up.');
+  } catch { showStatus('Unable to reset settings.', false); }
+});
+
+$('export').addEventListener('click', () => {
+  try {
+    const backup = {format:'SetAndForget-backup', version:1, exportedAt:new Date().toISOString(), settings:normalize(rawSettings()), data:{}};
+    for (const key of DATA_KEYS) { try { backup.data[key] = JSON.parse(localStorage.getItem(key) || 'null'); } catch { backup.data[key] = null; } }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'}));
+    const a = document.createElement('a'); a.href = url; a.download = 'setandforget-backup.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showStatus('Backup exported.');
+  } catch { showStatus('Could not export backup.', false); }
+});
+
+$('import').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0]; if (!file) return;
+  try {
+    if (file.size > 5 * 1024 * 1024) throw new Error('The backup exceeds the 5 MB limit.');
+    const parsed = JSON.parse(await file.text());
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('The file must contain a JSON backup object.');
+    const inSettings = parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings) ? normalize(parsed.settings) : null;
+    const inData = parsed.data && typeof parsed.data === 'object' && !Array.isArray(parsed.data) ? parsed.data : null;
+    if (!inSettings && !inData) throw new Error('No settings or app data were found in this backup.');
+    const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+    const writes = [];
+    if (inSettings) writes.push([SETTINGS_KEY, inSettings], [LEGACY_KEYS[0], inSettings]);
+    if (inData) for (const key of DATA_KEYS) {
+      if (!Object.prototype.hasOwnProperty.call(inData, key)) continue;
+      const v = inData[key];
+      if (key === SUBS_KEY && v !== null && (!Array.isArray(v) || v.some(x => !isObj(x) || typeof x.name !== 'string' || !Number.isFinite(Number(x.cost)) || Number(x.cost) < 0 || (x.members !== undefined && !isObj(x.members)))))
+        throw new Error('Subscription data failed validation.');
+      if (key === 'SetAndForget.groups.v1' && v !== null && (!isObj(v) || !Array.isArray(v.groups) || v.groups.some(g => !isObj(g) || !Array.isArray(g.members) || !Array.isArray(g.subs))))
+        throw new Error('Group-split data failed validation.');
+      writes.push([key, v]);
     }
-    if(!Object.prototype.hasOwnProperty.call(merged,'dueSoonAlerts')&&typeof merged.auto==='boolean')merged.dueSoonAlerts=merged.auto;
-    return {...DEFAULTS,...merged};
+    // All validated; write in one pass so a bad file never half-imports.
+    for (const [key, value] of writes) localStorage.setItem(key, JSON.stringify(value));
+    render(); showStatus('Backup imported. Review the restored data before continuing.');
+  } catch (err) { showStatus(err && err.message ? err.message : 'Could not import this backup.', false); }
+  finally { e.target.value = ''; }
+});
+
+window.addEventListener('storage', e => {
+  if (!e.key || [SETTINGS_KEY, ...LEGACY_KEYS, ...DATA_KEYS].includes(e.key)) {
+    if (JSON.stringify(getForm()) === snapshot) render(); else renderHeader();
   }
-  function normalize(s){
-    const categories=['Streaming','Software','AI Tools','Cloud','Utilities','Other'];
-    const roommates=(Array.isArray(s.roommates)?s.roommates:String(s.roommates||'').split(/\r?\n/)).map(v=>String(v).trim().slice(0,60)).filter(Boolean).slice(0,30);
-    const bounded=v=>Math.max(0,Math.min(365,Number.isFinite(Number(v))?Math.floor(Number(v)):7));
-    return {...DEFAULTS,...s,
-      name:string(s.name||s.fullName||s.full_name||DEFAULTS.name).trim().slice(0,80)||DEFAULTS.name,
-      paymentLink:string(s.paymentLink).trim().slice(0,500),
-      currency:['INR','USD','EUR','GBP','CAD','AUD','JPY'].includes(s.currency)?s.currency:'INR',
-      defaultCategory:categories.includes(s.defaultCategory)?s.defaultCategory:'Streaming',
-      roommates,venmo:string(s.venmo).trim().slice(0,200),zelle:string(s.zelle).trim().slice(0,200),
-      trialDays:bounded(s.trialDays),unpaidDays:bounded(s.unpaidDays),
-      trialAlerts:s.trialAlerts!==false,unpaidAlerts:s.unpaidAlerts!==false,dueSoonAlerts:s.dueSoonAlerts!==false,
-      weeklySummary:s.weeklySummary===true,autoClearBalances:s.autoClearBalances===true
-    };
-  }
-  function getForm(){
-    return normalize({...rawSettings(),name:$('name').value.trim(),paymentLink:$('paymentLink').value.trim(),roommates:$('roommates').value.split(/\r?\n/),currency:$('currency').value,defaultCategory:$('defaultCategory').value,venmo:$('venmo').value.trim(),zelle:$('zelle').value.trim(),trialAlerts:$('trialAlerts').checked,unpaidAlerts:$('unpaidAlerts').checked,dueSoonAlerts:$('dueSoonAlerts').checked,weeklySummary:$('weeklySummary').checked,autoClearBalances:$('autoClearBalances').checked,trialDays:$('trialDays').value,unpaidDays:$('unpaidDays').value});
-  }
-  function avatarText(name){return name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')||'YA';}
-  function showStatus(message,ok=true){
-    const el=$('status');el.textContent=message;el.className='mb-5 rounded-xl px-4 py-3 text-sm font-medium '+(ok?'bg-emerald-50 text-emerald-800 border border-emerald-100':'bg-rose-50 text-rose-800 border border-rose-100');window.scrollTo({top:0,behavior:'smooth'});
-  }
-  function updatePreview(){
-    const name=$('name').value.trim()||'Your account';const initials=avatarText(name);
-    $('profile-preview').textContent=name;$('profile-avatar').textContent=initials;$('top-avatar').textContent=initials;
-  }
-  function render(){
-    const s=normalize(rawSettings());
-    $('name').value=s.name;$('paymentLink').value=s.paymentLink;$('roommates').value=s.roommates.join('\n');
-    $('currency').value=s.currency;$('defaultCategory').value=s.defaultCategory;$('venmo').value=s.venmo;$('zelle').value=s.zelle;
-    for(const id of ['trialAlerts','unpaidAlerts','dueSoonAlerts','weeklySummary','autoClearBalances'])$(id).checked=!!s[id];
-    $('trialDays').value=s.trialDays;$('unpaidDays').value=s.unpaidDays;updatePreview();
-    savedSnapshot=JSON.stringify(s);
-  }
-  function save(){
-    const s=getForm();
-    if(!$('settings-form').reportValidity())return;
-    try{
-      localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));
-      localStorage.setItem('SetAndForget.settings.v1',JSON.stringify(s));
-      render();showStatus('Your settings have been saved successfully.');
-    }catch(e){showStatus('Unable to save settings. Check that browser storage is available.',false);}
-  }
-  $('settings-form').addEventListener('submit',e=>{e.preventDefault();save();});
-  $('name').addEventListener('input',updatePreview);
-  $('discard').addEventListener('click',()=>{render();showStatus('Unsaved changes were discarded.');});
-  $('reset').addEventListener('click',()=>{
-    if(!confirm('Reset all preferences to defaults? Your subscriptions and group bills will remain unchanged.'))return;
-    try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(DEFAULTS));localStorage.setItem('SetAndForget.settings.v1',JSON.stringify(DEFAULTS));render();showStatus('Settings restored to defaults.');}
-    catch(e){showStatus('Unable to reset settings.',false);}
-  });
-  $('export').addEventListener('click',()=>{
-    try{
-      const backup={format:'SetAndForget-backup',version:1,exportedAt:new Date().toISOString(),settings:normalize(rawSettings()),data:{}};
-      for(const key of DATA_KEYS){try{backup.data[key]=JSON.parse(localStorage.getItem(key)||'null');}catch{backup.data[key]=null;}}
-      const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='setandforget-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showStatus('Backup exported.');
-    }catch(e){showStatus('Could not export backup.',false);}
-  });
-  $('import').addEventListener('change',async e=>{
-    const file=e.target.files&&e.target.files[0];if(!file)return;
-    try{
-      if(file.size>5*1024*1024)throw new Error('The backup exceeds the 5 MB limit.');
-      const parsed=JSON.parse(await file.text());
-      if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('The file must contain a JSON backup object.');
-      const incomingSettings=parsed.settings&&typeof parsed.settings==='object'&&!Array.isArray(parsed.settings)?normalize(parsed.settings):null;
-      const incomingData=parsed.data&&typeof parsed.data==='object'&&!Array.isArray(parsed.data)?parsed.data:null;
-      if(!incomingSettings&&!incomingData)throw new Error('No settings or app data were found in this backup.');
-      // Validate all incoming data before writing any key, to avoid a partial import.
-      const writes=[];
-      if(incomingSettings){writes.push([SETTINGS_KEY,incomingSettings],[LEGACY_KEYS[0],incomingSettings]);}
-      if(incomingData){
-        for(const key of DATA_KEYS){
-          if(!Object.prototype.hasOwnProperty.call(incomingData,key))continue;
-          const value=incomingData[key];
-          if(key==='SetAndForget.v2'&&value!==null&&(!Array.isArray(value)||value.some(x=>!x||typeof x!=='object'||typeof x.name!=='string'||!Number.isFinite(Number(x.cost))||Number(x.cost)<0)))throw new Error('Subscription data failed validation.');
-          if(key==='SetAndForget.groups.v1'&&value!==null&&(!value||typeof value!=='object'||!Array.isArray(value.groups)||value.groups.some(g=>!g||typeof g!=='object'||!Array.isArray(g.members)||!Array.isArray(g.subs))))throw new Error('Group-split data failed validation.');
-          writes.push([key,value]);
-        }
-      }
-      for(const [key,value] of writes)localStorage.setItem(key,JSON.stringify(value));
-      render();showStatus('Backup imported successfully. Review the restored data before continuing.');
-    }catch(err){showStatus(err&&err.message?err.message:'Could not import this backup.',false);}
-    finally{e.target.value='';}
-  });
-  window.addEventListener('storage',e=>{if(!e.key||[SETTINGS_KEY,...LEGACY_KEYS,...DATA_KEYS].includes(e.key))render();});
-  document.querySelectorAll('.side-nav .navlink').forEach(link=>link.addEventListener('click',()=>{document.querySelectorAll('.side-nav .navlink').forEach(n=>n.classList.remove('active'));link.classList.add('active');}));
-  render();
+});
+render();
 })();
 </script>
 </body>

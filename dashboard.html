@@ -220,7 +220,7 @@ function normalizeCycles(){
   let changed=false; const now=today();
   for(const s of subs){ if(!s || typeof s!=='object') continue; s.members = s.members && typeof s.members==='object' && !Array.isArray(s.members) ? s.members : {};
     if(s.trial && s.date && parse(s.date) <= now){ s.trial=false; s.convertedFromTrial=true; s.date=iso(parse(s.date)); changed=true; }
-    if(!s.trial && s.date){ let d=parse(s.date), guard=0; if(!Number.isNaN(d.getTime())){ while(d < now && guard++ < 240){ d.setMonth(d.getMonth()+1); for(const name of Object.keys(s.members)){ s.members[name]=false; s.unpaidMonths=s.unpaidMonths||{}; s.unpaidMonths[name]=(Number(s.unpaidMonths[name])||0)+1; } changed=true; } if(guard>0) s.date=iso(d); } }
+    if(!s.trial && s.date){ let d=parse(s.date), guard=0; if(!Number.isNaN(d.getTime())){ while(d < now && guard++ < 240){ d.setMonth(d.getMonth()+1); s.unpaidMonths=s.unpaidMonths||{}; for(const name of Object.keys(s.members)){ s.unpaidMonths[name]=s.members[name] ? 1 : (Number(s.unpaidMonths[name])||0)+1; s.members[name]=false; } changed=true; } if(guard>0) s.date=iso(d); } }
   } return changed;
 }
 function refreshSettingsUI(){ settings=readSettings(); const nm=String(settings.name||settings.fullName||settings.full_name||'Your account'); $('#profile-name').textContent=nm; $('#profile-initials').textContent=nm.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')||'U'; $('#currency-symbol').textContent=({USD:'$',INR:'₹',EUR:'€',GBP:'£',CAD:'CA$',AUD:'A$',JPY:'¥'})[currencyCode()]||currencyCode()+' '; $('#currency-label').textContent=$('#currency-symbol').textContent+'/mo';
@@ -425,7 +425,7 @@ document.addEventListener('click', e => {
     const act = el.dataset.act, id = el.dataset.id, name = el.dataset.m, s = subs.find(x => x.id === (id || sel));
     const unpaid = [];
     subs.forEach(x => Object.entries(x.members).forEach(([m, p]) => { if (!p) unpaid.push({x, m}); }));
-    if ((act === 'nav' && el.dataset.page !== 'group-splits') || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
+    if ((act === 'nav' && el.dataset.page === 'dashboard') || act === 'bell' || act === 'review' || act === 'inspect' || act === 'menu') e.preventDefault();
     switch (act) {
       case 'open': openModal(); break;
       case 'close': closeModal(); break;
@@ -438,7 +438,7 @@ case 'nav': { const target=el.dataset.page; if(target==='dashboard'){ e.preventD
       case 'tab': tab = el.dataset.tab; render(); break;
       case 'inspect': sel = id; render(); if (innerWidth < 1024) $('#settle').scrollIntoView({block: 'nearest'}); break;
       case 'remove': if (s && confirm(`${s.trial ? 'Cancel' : 'Remove'} "${s.name}"?`)) { subs = subs.filter(x => x !== s); save(); render(); toast(s.trial ? `Cancelled "${s.name}"` : `Removed "${s.name}"`, 'delete'); } break;
-      case 'toggle': if (s) { s.members[name] = !s.members[name]; save(); render(); toast(s.members[name] ? `${name} marked as settled` : `${name} marked as unpaid`, s.members[name] ? 'check_circle' : 'schedule'); } break;
+      case 'toggle': if (s) { s.members[name] = !s.members[name]; s.unpaidMonths = s.unpaidMonths || {}; s.unpaidMonths[name] = s.members[name] ? 0 : Math.max(1, Number(s.unpaidMonths[name]) || 1); save(); render(); toast(s.members[name] ? `${name} marked as settled` : `${name} marked as unpaid`, s.members[name] ? 'check_circle' : 'schedule'); } break;
       case 'chip': picked.has(name) ? picked.delete(name) : picked.add(name); chips(); break;
       case 'nudge-one': if (s) copy(`Hey ${name}, here's the link to settle your ${money(share(s))} share for ${s.name}: ${PAY_LINK()}`, `Copied payment message for ${name}`); break;
       case 'nudge-all': if (unpaid.length) copy('SetAndForget reminder:\n' + unpaid.map(u => `${u.m} owes ${money(share(u.x))} for ${u.x.name}`).join('\n') + (PAY_LINK() ? `\nPay here: ${PAY_LINK()}` : ''), `Reminder for ${plural(unpaid.length, 'share')} copied. Paste it in your group chat.`); break;

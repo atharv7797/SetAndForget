@@ -167,7 +167,8 @@ const KEY = 'SetAndForget.groups.v1', SUBS_KEY = 'SetAndForget.v2', SETTINGS_KEY
 const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', roommates:['Marcus','Sarah','David'], venmo:'', zelle:'', dueSoonAlerts:true, autoClearBalances:false};
 function readAppSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
 let appSettings = readAppSettings();
-let ME = String(appSettings.name || appSettings.fullName || appSettings.full_name || 'You').trim().split(/\s+/)[0] || 'You';
+const meFrom = s => { const n = String((s && (s.name || s.fullName || s.full_name)) || '').trim(); return !n || n === 'Your account' ? 'Alex' : (n.split(/\s+/)[0] || 'Alex'); };
+let ME = meFrom(appSettings);
 const currencyCode = () => appSettings.currency || 'USD';
 const money = n => { try{return new Intl.NumberFormat(undefined,{style:'currency',currency:currencyCode(),minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);}catch{return '$'+r2(Number(n)||0).toFixed(2);} };
 const payLink = () => appSettings.paymentLink || appSettings.venmo || appSettings.zelle || '';
@@ -209,17 +210,19 @@ const seed = () => { const now = Date.now(); return {active:'g1', updated:now, s
   {id:'g3', name:'Design Studio Co-op', hid:'#SUB-DS-207', members:['Alex','Priya'], subs:[], log:[]}]}; };
 let data; try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
 if (!data || !Array.isArray(data.groups)) data = seed();
+const SG = () => { if (!data.syncGroup || !data.groups.some(x => x.id === data.syncGroup)) data.syncGroup = data.active; return data.groups.find(x => x.id === data.syncGroup) || data.groups[0]; };
 function normalizeProfile(){
   appSettings = readAppSettings();
-  const newMe = String(appSettings.name || appSettings.fullName || appSettings.full_name || 'You').trim().split(/\s+/)[0] || 'You';
-  if (newMe !== ME) {
+  const newMe = meFrom(appSettings), prev = data.me || 'Alex';
+  if (newMe !== prev) {
+    const sw = n => n === prev ? newMe : n;
     for (const g of data.groups || []) {
-      g.members = (g.members || []).map(n => n === ME || n === 'Alex' ? newMe : n);
-      g.members = [...new Set(g.members)];
-      for (const s of g.subs || []) { if (s.payer === ME || s.payer === 'Alex') s.payer = newMe; if (s.m && Object.prototype.hasOwnProperty.call(s.m, ME)) { s.m[newMe] = s.m[ME]; delete s.m[ME]; } if (s.m && Object.prototype.hasOwnProperty.call(s.m, 'Alex')) { s.m[newMe] = s.m['Alex']; delete s.m['Alex']; } }
+      g.members = [...new Set((g.members || []).map(sw))];
+      for (const s of g.subs || []) { if (s.payer === prev) s.payer = newMe; if (s.m && Object.prototype.hasOwnProperty.call(s.m, prev)) { s.m[newMe] = s.m[prev]; delete s.m[prev]; } }
+      for (const e of g.log || []) { e.a = sw(e.a); e.b = sw(e.b); }
     }
-    ME = newMe;
   }
+  data.me = newMe; ME = newMe;
   data.settings = {...(data.settings || {}), venmo:appSettings.venmo || data.settings?.venmo || '', zelle:appSettings.zelle || data.settings?.zelle || '', dueSoonAlerts:appSettings.dueSoonAlerts !== false};
   const g = data.groups.find(x => x.id === data.active) || data.groups[0];
   if (g && Array.isArray(appSettings.roommates)) {
@@ -228,15 +231,14 @@ function normalizeProfile(){
   }
 }
 function processLocalBillingCycles(){
-  const g = data.groups.find(x => x.id === data.active) || data.groups[0]; if (!g) return;
   let changed = false;
-  for (const s of g.subs || []) {
+  for (const s of data.groups.flatMap(x => x.subs || [])) {
     if (s.dashboardLinked || !s.date) continue;
     let due = parse(s.date), guard = 0;
     if (Number.isNaN(due.getTime())) continue;
     while (due < today() && guard++ < 240) {
       due.setMonth(due.getMonth() + 1);
-      for (const name of Object.keys(s.m || {})) if (name !== s.payer) s.m[name] = Math.max(1, Number(s.m[name]) || 0);
+      for (const name of Object.keys(s.m || {})) if (name !== s.payer) s.m[name] = (Number(s.m[name]) || 0) + 1;
       changed = true;
     }
     if (guard > 0) { s.date = iso(due); changed = true; }
@@ -255,23 +257,23 @@ function syncDashboardSubsIntoGroup(){
       due.setMonth(due.getMonth() + 1);
       d.unpaidMonths = d.unpaidMonths || {};
       for (const name of Object.keys(d.members)) {
+        d.unpaidMonths[name] = d.members[name] ? 1 : (Number(d.unpaidMonths[name]) || 0) + 1;
         d.members[name] = false;
-        d.unpaidMonths[name] = (Number(d.unpaidMonths[name]) || 0) + 1;
       }
       cycleChanged = true;
     }
     if (guard > 0) { d.date = iso(due); cycleChanged = true; }
   }
   if (cycleChanged) try { localStorage.setItem(SUBS_KEY, JSON.stringify(ds)); } catch {}
-  const g = data.groups.find(x => x.id === data.active) || data.groups[0]; if (!g) return;
+  const g = SG(); if (!g) return;
   const known = new Map((g.subs || []).map(s => [String(s.id), s]));
   for (const d of ds) {
     if (!d || typeof d !== 'object' || d.trial || !d.members || !Object.keys(d.members).length) continue;
     const old = known.get(String(d.id));
-    const m = {};
+    const m = {[ME]: 0};
     for (const [name, paid] of Object.entries(d.members)) m[name] = paid ? 0 : Math.max(1, Number(d.unpaidMonths?.[name]) || 1);
     const mapped = {id:String(d.id), name:String(d.name || 'Subscription'), icon:String(d.icon || 'receipt_long'), tone:String(d.tone || 'bg-surface-container-high text-primary'), cost:Math.max(0,Number(d.cost)||0), payer:ME, date:String(d.date || plus(30)), m, dashboardLinked:true};
-    if (old) { Object.assign(old, mapped); } else { g.subs.push(mapped); }
+    if (old) { if (old.dashboardLinked) Object.assign(old, mapped); } else { g.subs.push(mapped); }
     for (const name of Object.keys(m)) if (!g.members.includes(name)) g.members.push(name);
   }
   processLocalBillingCycles();
@@ -279,14 +281,14 @@ function syncDashboardSubsIntoGroup(){
 function syncGroupSubsToDashboard(){
   let ds; try { ds = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); } catch {}
   if (!Array.isArray(ds)) return;
-  const g = data.groups.find(x => x.id === data.active) || data.groups[0]; if (!g) return;
+  const g = SG(); if (!g) return;
   const byId = new Map((g.subs || []).map(s => [String(s.id), s]));
   let changed = false;
   for (const d of ds) {
     const s = byId.get(String(d.id)); if (!s || !s.dashboardLinked || !d.members || typeof d.members !== 'object') continue;
     for (const name of Object.keys(d.members)) { const paid = name === s.payer || Number(s.m[name] || 0) === 0; if (d.members[name] !== paid) { d.members[name] = paid; changed = true; } }
     d.unpaidMonths = d.unpaidMonths || {};
-    for (const name of Object.keys(d.members)) if (Number(s.m[name] || 0) > 0) d.unpaidMonths[name] = Number(s.m[name]);
+    for (const name of Object.keys(d.members)) { const mo = Number(s.m[name] || 0); if (mo > 0) { if (d.unpaidMonths[name] !== mo) { d.unpaidMonths[name] = mo; changed = true; } } else if (d.unpaidMonths[name]) { d.unpaidMonths[name] = 0; changed = true; } }
     if (d.date !== s.date) { d.date = s.date; changed = true; }
   }
   if (changed) try { localStorage.setItem(SUBS_KEY, JSON.stringify(ds)); } catch {}

@@ -133,7 +133,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 
         <!-- Renewals -->
         <section class="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-3" aria-label="Upcoming renewals">
-          <div class="flex items-center justify-between"><h2 class="font-headline-sm text-sm font-semibold">Next 30 days</h2><span id="ren-total" class="text-xs font-label-numeric text-outline"></span></div>
+          <div class="flex items-center justify-between"><h2 id="ren-title" class="font-headline-sm text-sm font-semibold">Next 30 days</h2><span id="ren-total" class="text-xs font-label-numeric text-outline"></span></div>
           <div id="renewals" class="space-y-2"></div>
         </section>
       </aside>
@@ -161,7 +161,8 @@ const KEY = 'SetAndForget.v2', GKEY = 'SetAndForget.groups.v1', SETTINGS_KEY = '
 const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', defaultCategory:'Streaming', roommates:['Marcus','Sarah','David'], trialAlerts:true, unpaidAlerts:true, trialDays:7, unpaidDays:7, weeklySummary:false, autoClearBalances:false, dueSoonAlerts:true};
 function readSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
 let settings = readSettings();
-const CATS = {Streaming:['Streaming','bg-secondary','#006c49'], Software:['Software & Productivity','bg-primary','#3625cd'], 'AI Tools':['AI Tools','bg-tertiary','#684000'], Cloud:['Cloud Storage','bg-outline','#777587'], Utilities:['Utilities & Wifi','bg-inverse-surface','#213145']};
+const CATS = {Streaming:['Streaming','bg-secondary','#006c49'], Software:['Software & Productivity','bg-primary','#3625cd'], 'AI Tools':['AI Tools','bg-tertiary','#684000'], Cloud:['Cloud Storage','bg-outline','#777587'], Utilities:['Utilities & Wifi','bg-inverse-surface','#213145'], Other:['Other','bg-surface-dim','#cbdbf5']};
+const catOf = s => CATS[s.cat] ? s.cat : 'Other';
 const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','#'],['Settings','settings.html']];
 
 // ---------- helpers ----------
@@ -176,7 +177,11 @@ const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'
 const inDays = d => Math.round((d - today()) / DAY);
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const nextDate = s => { const d = parse(s.date); if (!s.trial) while (d < today()) d.setMonth(d.getMonth() + 1); return d; };
-const people = s => 1 + Object.keys(s.members).length, share = s => s.cost / people(s);
+const PLACEHOLDER_NAME = 'Your account';
+const cleanName = v => { const n = String(v || '').trim(); return n === PLACEHOLDER_NAME ? '' : n; };
+const trialEnd = s => parse(s.trialEndDate || s.date);
+const memberMap = s => (s && s.members && typeof s.members === 'object' && !Array.isArray(s.members)) ? s.members : {};
+const people = s => 1 + Object.keys(memberMap(s)).length, share = s => s.cost / people(s);
 
 // ---------- data (reads what the other two pages save; falls back to the same sample data) ----------
 const seedSubs = () => [
@@ -203,7 +208,7 @@ function reloadData(){
   try { const fresh = JSON.parse(localStorage.getItem(GKEY)||'null'); if(fresh && Array.isArray(fresh.groups)) gd=fresh; else if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); } catch { if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); }
   // Expired trials become active once, and the updated state is persisted.
   let changed=false; const now=today();
-  subs.forEach(s=>{ if(s && s.trial){ const endValue=s.trialEndDate || s.date; const end=endValue ? parse(endValue) : null; if(end && !Number.isNaN(end.getTime()) && end < now){ s.trial=false; if(s.trialEndDate) s.date=s.trialEndDate; changed=true; } } });
+  subs.forEach(s=>{ if(s && s.trial){ const endValue=s.trialEndDate || s.date; const end=endValue ? parse(endValue) : null; if(end && !Number.isNaN(end.getTime()) && end <= now){ s.trial=false; if(s.trialEndDate) s.date=s.trialEndDate; changed=true; } } });
   if(changed){ try{localStorage.setItem(KEY,JSON.stringify(subs));}catch{} }
 }
 reloadData();
@@ -221,16 +226,17 @@ const empty = t => `<p class="text-xs text-outline">${t}</p>`;
 // ---------- compute + render ----------
 function render() {
   reloadData();
-  const profileName = String(settings.name || settings.fullName || settings.full_name || 'Your account');
-  $('#profile-name').textContent = profileName;
+  const profileName = cleanName(settings.name || settings.fullName || settings.full_name);
+  $('#profile-name').textContent = profileName || PLACEHOLDER_NAME;
   $('#profile-initials').textContent = profileName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('') || 'U';
   const act = subs.filter(s => !s.trial), trials = subs.filter(s => s.trial);
   const total = sum(act.map(share)), gross = sum(act.map(s => s.cost)), saved = gross - total;
   const unpaid = []; let paidAmt = 0, paidN = 0;
-  subs.forEach(s => Object.entries(s.members).forEach(([m, p]) => p ? (paidN++, paidAmt += share(s)) : unpaid.push({s, m, amt: share(s)})));
+  // An unpaid share is counted once per missed month, the same rule Group Splits uses.
+  subs.forEach(s => Object.entries(memberMap(s)).forEach(([m, p]) => { if (p) { paidN++; paidAmt += share(s); } else { const mo = Math.max(1, Number(s.unpaidMonths && s.unpaidMonths[m]) || 1); unpaid.push({s, m, amt: share(s) * mo, mo}); } }));
   const owed = sum(unpaid.map(u => u.amt));
   const trialWindow = Math.max(0, Number(settings.trialDays ?? 7));
-  const ending = settings.trialAlerts === false ? [] : trials.filter(s => inDays(parse(s.trialEndDate || s.date)) <= trialWindow), trialCost = sum(trials.map(share));
+  const ending = settings.trialAlerts === false ? [] : trials.filter(s => inDays(trialEnd(s)) <= trialWindow), trialCost = sum(trials.map(share));
   const alertUnpaid = settings.unpaidAlerts === false ? [] : unpaid;
 
   // KPIs
@@ -252,7 +258,7 @@ function render() {
   const now = new Date(), months = [];
   for (let i = 0; i < 6; i++) {
     const first = new Date(now.getFullYear(), now.getMonth() + i, 1), end = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
-    months.push({l: first.toLocaleDateString('en-US', {month:'short'}), a: total, t: sum(trials.filter(s => parse(s.date) <= end).map(share))});
+    months.push({l: first.toLocaleDateString('en-US', {month:'short'}), a: total, t: sum(trials.filter(s => trialEnd(s) <= end).map(share))});
   }
   const top = Math.max(...months.map(m => m.a + m.t), 1);
   $('#forecast').innerHTML = months.map(m => `<div class="flex-1 h-full flex flex-col justify-end items-center gap-1.5 min-w-0">
@@ -262,19 +268,19 @@ function render() {
     <span class="text-[11px] text-on-surface-variant font-medium">${m.l}</span></div>`).join('');
 
   // category donut + legend
-  const byCat = Object.keys(CATS).map(k => [k, sum(act.filter(s => s.cat === k).map(share))]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+  const byCat = Object.keys(CATS).map(k => [k, sum(act.filter(s => catOf(s) === k).map(share))]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
   let off = 0;
-  $('#donut').innerHTML = byCat.map(([k, v]) => { const p = v / total * 100, el = `<circle cx="18" cy="18" r="15.9155" fill="none" stroke="${CATS[k][2]}" stroke-width="4" stroke-dasharray="${Math.max(p - .6, 0)} ${100 - Math.max(p - .6, 0)}" stroke-dashoffset="${-off}"><title>${CATS[k][0]}</title></circle>`; off += p; return el; }).join('');
+  $('#donut').innerHTML = byCat.map(([k, v]) => { const p = total ? v / total * 100 : 0, el = `<circle cx="18" cy="18" r="15.9155" fill="none" stroke="${CATS[k][2]}" stroke-width="4" stroke-dasharray="${Math.max(p - .6, 0)} ${100 - Math.max(p - .6, 0)}" stroke-dashoffset="${-off}"><title>${CATS[k][0]}</title></circle>`; off += p; return el; }).join('');
   $('#d-total').textContent = money(total); $('#cat-total').textContent = plural(byCat.length, 'category').replace('categorys', 'categories');
-  $('#cat-legend').innerHTML = byCat.map(([k, v]) => `<div class="flex items-center justify-between gap-2"><span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${CATS[k][1]} shrink-0"></span>${CATS[k][0]}</span><span class="font-label-numeric text-on-surface"><strong>${money(v)}</strong> <span class="text-outline">${Math.round(v / total * 100)}%</span></span></div>`).join('') || empty('No active subscriptions yet.');
+  $('#cat-legend').innerHTML = byCat.map(([k, v]) => `<div class="flex items-center justify-between gap-2"><span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${CATS[k][1]} shrink-0"></span>${CATS[k][0]}</span><span class="font-label-numeric text-on-surface"><strong>${money(v)}</strong> <span class="text-outline">${total ? Math.round(v / total * 100) : 0}%</span></span></div>`).join('') || empty('No active subscriptions yet.');
 
   // top subscriptions
   const ranked = [...act].sort((a, b) => share(b) - share(a)).slice(0, 6), mx = ranked[0] ? share(ranked[0]) : 1;
   $('#top').innerHTML = ranked.map(s => `<li class="flex items-center gap-3">
     <div class="w-9 h-9 rounded-lg ${esc((s.tone || 'bg-primary-container/20 text-primary').split(/\s+/).filter(c=>/^[a-zA-Z0-9_:/.-]+$/.test(c)).join(' '))} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">${esc(s.icon || 'loyalty').replace(/[^a-zA-Z0-9_-]/g,'')}</span></div>
     <div class="flex-1 min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold truncate">${esc(s.name)}</span><span class="font-label-numeric text-xs font-bold shrink-0">${money(share(s))}</span></div>
-    <div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="bar h-full rounded-full ${(CATS[s.cat] || CATS.Software)[1]}" style="width:${share(s) / mx * 100}%"></div></div>
-    <div class="text-[10px] text-outline font-label-numeric mt-0.5">${Object.keys(s.members).length ? `Split ${people(s)} ways of ${money(s.cost)}` : `Solo · ${money(s.cost)}`}</div></div></li>`).join('') || empty('Nothing to rank yet.');
+    <div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="bar h-full rounded-full ${CATS[catOf(s)][1]}" style="width:${share(s) / mx * 100}%"></div></div>
+    <div class="text-[10px] text-outline font-label-numeric mt-0.5">${Object.keys(memberMap(s)).length ? `Split ${people(s)} ways of ${money(s.cost)}` : `Solo · ${money(s.cost)}`}</div></div></li>`).join('') || empty('Nothing to rank yet.');
 
   // settlement (dashboard splits)
   const all = paidAmt + owed, sp = all ? paidAmt / all * 100 : 100, by = {};
@@ -287,12 +293,13 @@ function render() {
   // renewals next 30 days
   const renewalWindow = Math.max(0, Number(settings.dueSoonDays ?? settings.dueSoonWindow ?? 30));
   const soon = act.map(s => ({s, d: nextDate(s)})).filter(x => inDays(x.d) >= 0 && inDays(x.d) <= renewalWindow).sort((a, b) => a.d - b.d);
+  $('#ren-title').textContent = `Next ${renewalWindow} days`;
   $('#ren-total').textContent = money(sum(soon.map(x => share(x.s)))) + ' due';
-  $('#renewals').innerHTML = soon.map(({s, d}) => `<div class="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded bg-surface-container-low"><span class="flex items-center gap-2 min-w-0"><span class="w-1.5 h-1.5 rounded-full ${inDays(d) <= 7 ? 'bg-tertiary' : 'bg-outline'} shrink-0"></span><span class="font-medium truncate">${esc(s.name)}</span></span><span class="font-label-numeric font-semibold shrink-0">${fmtDate(d)} • ${money(share(s))}</span></div>`).join('') || empty('Nothing renews in the next 30 days.');
+  $('#renewals').innerHTML = soon.map(({s, d}) => `<div class="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded bg-surface-container-low"><span class="flex items-center gap-2 min-w-0"><span class="w-1.5 h-1.5 rounded-full ${inDays(d) <= 7 ? 'bg-tertiary' : 'bg-outline'} shrink-0"></span><span class="font-medium truncate">${esc(s.name)}</span></span><span class="font-label-numeric font-semibold shrink-0">${fmtDate(d)} • ${money(share(s))}</span></div>`).join('') || empty(`Nothing renews in the next ${renewalWindow} days.`);
 
   // group splits overview (groupsplits page data)
   const gcards = gd.groups.map(g => {
-    const bill = sum(g.subs.map(s => s.cost)), debt = sum(g.subs.flatMap(s => Object.entries(s.m).filter(([n, v]) => n !== s.payer && v > 0).map(([, v]) => s.cost / Object.keys(s.m).length * v)));
+    const bill = sum(g.subs.map(s => s.cost)), debt = sum(g.subs.flatMap(s => { const m = s.m || {}, n = Object.keys(m).length || 1; return Object.entries(m).filter(([who, v]) => who !== s.payer && v > 0).map(([, v]) => s.cost / n * v); }));
     return `<div class="rounded-lg bg-surface-container-low p-3.5 space-y-1.5"><div class="text-xs font-semibold truncate">${esc(g.name)}</div>
       <div class="font-label-numeric text-base font-bold">${money(bill)} <span class="text-xs font-normal text-outline">/mo</span></div>
       <div class="text-[11px] text-on-surface-variant">${plural(g.members.length, 'member')} · ${plural(g.subs.length, 'shared bill')}</div>
@@ -302,12 +309,12 @@ function render() {
 
   // insights
   const cards = [], bigCat = byCat[0], bigSub = ranked[0];
-  if (bigCat) cards.push(['pie_chart', 'text-primary', `${CATS[bigCat[0]][0]} is your biggest category`, `${money(bigCat[1])}/mo, ${Math.round(bigCat[1] / total * 100)}% of everything you pay.`]);
+  if (bigCat) cards.push(['pie_chart', 'text-primary', `${CATS[bigCat[0]][0]} is your biggest category`, `${money(bigCat[1])}/mo, ${total ? Math.round(bigCat[1] / total * 100) : 0}% of everything you pay.`]);
   if (bigSub) cards.push(['trending_up', 'text-primary', `${esc(bigSub.name)} costs you most`, `${money(share(bigSub))}/mo, or ${money(share(bigSub) * 12)} a year.`]);
   if (saved > 0) cards.push(['group', 'text-secondary', 'Splitting is working', `Roommates cover ${money(saved)}/mo, so you pay ${Math.round(pct)}% of the full bills.`]);
   if (ending.length) cards.push(['warning', 'text-tertiary', `${plural(ending.length, 'trial')} ending soon`, `${ending.map(s => esc(s.name.replace(/ Trial$/, ''))).join(', ')} will add ${money(sum(ending.map(share)))}/mo if you don't cancel.`]);
   if (alertUnpaid.length) cards.push(['schedule', 'text-error', `${money(sum(alertUnpaid.map(u=>u.amt)))} still unpaid`, `${plural(alertUnpaid.length, 'share')} are waiting to be settled.`]);
-  const solo = act.filter(s => !Object.keys(s.members).length);
+  const solo = act.filter(s => !Object.keys(memberMap(s)).length);
   if (solo.length) cards.push(['person', 'text-outline', `${plural(solo.length, 'solo subscription')}`, `${money(sum(solo.map(s => s.cost)))}/mo that could be split with someone.`]);
   $('#insights').innerHTML = cards.slice(0, 6).map(([ic, tc, h, p]) => `<div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm flex gap-3.5"><div class="w-9 h-9 rounded-lg bg-surface-container-low ${tc} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">${ic}</span></div><div><div class="text-sm font-semibold">${h}</div><p class="text-xs text-on-surface-variant mt-0.5">${p}</p></div></div>`).join('') || empty('Add a few subscriptions to see insights.');
 

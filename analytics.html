@@ -42,8 +42,8 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
       </button>
       <a href="dashboard.html" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary text-body-sm font-semibold rounded-lg shadow-sm transition-all"><span class="material-symbols-outlined text-base">add</span>Add subscription</a>
       <div class="flex items-center gap-2 pl-1">
-        <span class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">AC</span>
-        <div class="hidden lg:flex flex-col leading-none"><span class="text-body-sm font-semibold">Alex Chen</span><span id="hdr-active" class="font-label-numeric text-[11px] text-outline"></span></div>
+        <span id="profile-initials" class="w-8 h-8 rounded-full bg-primary-container/15 text-primary flex items-center justify-center text-xs font-bold" aria-hidden="true">U</span>
+        <div class="hidden lg:flex flex-col leading-none"><span id="profile-name" class="text-body-sm font-semibold">Your account</span><span id="hdr-active" class="font-label-numeric text-[11px] text-outline"></span></div>
       </div>
     </div>
   </div>
@@ -157,12 +157,16 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 <script>
 (() => {
 const $ = s => document.querySelector(s);
-const KEY = 'SetAndForget.v2', GKEY = 'SetAndForget.groups.v1', DAY = 864e5;
+const KEY = 'SetAndForget.v2', GKEY = 'SetAndForget.groups.v1', SETTINGS_KEY = 'SetAndForget.settings', DAY = 864e5;
+const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', defaultCategory:'Streaming', roommates:['Marcus','Sarah','David'], trialAlerts:true, unpaidAlerts:true, trialDays:7, unpaidDays:7, weeklySummary:false, autoClearBalances:false, dueSoonAlerts:true};
+function readSettings(){ let raw={}; for(const k of [SETTINGS_KEY,'SetAndForget.settings.v1','SetAndForget.profile']){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
+let settings = readSettings();
 const CATS = {Streaming:['Streaming','bg-secondary','#006c49'], Software:['Software & Productivity','bg-primary','#3625cd'], 'AI Tools':['AI Tools','bg-tertiary','#684000'], Cloud:['Cloud Storage','bg-outline','#777587'], Utilities:['Utilities & Wifi','bg-inverse-surface','#213145']};
 const NAV = [['Dashboard','dashboard.html'],['Group Splits','groupsplits.html'],['Analytics','#'],['Settings','settings.html']];
 
 // ---------- helpers ----------
-const r2 = n => Math.round(n * 100) / 100, money = n => '$' + r2(n).toFixed(2), sum = a => a.reduce((x, y) => x + y, 0);
+const r2 = n => Math.round((Number(n)||0) * 100) / 100, sum = a => a.reduce((x, y) => x + y, 0);
+const money = n => { try{return new Intl.NumberFormat(undefined,{style:'currency',currency:settings.currency||'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);}catch{return '$'+r2(n).toFixed(2);} };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const iso = d => d.toLocaleDateString('sv');
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -192,10 +196,17 @@ const seedGroups = () => ({active:'g1', groups:[
     {id:'google', name:'Google One Cloud 2TB', cost:9.99, payer:'Alex', m:{Alex:0, David:0}}]},
   {id:'g2', name:'Family Plan', members:['Alex','Mom','Dad'], subs:[]},
   {id:'g3', name:'Design Studio Co-op', members:['Alex','Priya'], subs:[]}]});
-let subs, gd; try { subs = JSON.parse(localStorage.getItem(KEY)); } catch {}
-try { gd = JSON.parse(localStorage.getItem(GKEY)); } catch {}
-if (!Array.isArray(subs)) subs = seedSubs();
-if (!gd || !Array.isArray(gd.groups)) gd = seedGroups();
+let subs = [], gd = null;
+function reloadData(){
+  settings = readSettings();
+  try { const fresh = JSON.parse(localStorage.getItem(KEY)||'null'); if(Array.isArray(fresh)) subs=fresh; else subs=seedSubs(); } catch { if(!Array.isArray(subs)) subs=seedSubs(); }
+  try { const fresh = JSON.parse(localStorage.getItem(GKEY)||'null'); if(fresh && Array.isArray(fresh.groups)) gd=fresh; else if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); } catch { if(!gd || !Array.isArray(gd.groups)) gd=seedGroups(); }
+  // Expired trials become active once, and the updated state is persisted.
+  let changed=false; const now=today();
+  subs.forEach(s=>{ if(s && s.trial){ const endValue=s.trialEndDate || s.date; const end=endValue ? parse(endValue) : null; if(end && !Number.isNaN(end.getTime()) && end < now){ s.trial=false; if(s.trialEndDate) s.date=s.trialEndDate; changed=true; } } });
+  if(changed){ try{localStorage.setItem(KEY,JSON.stringify(subs));}catch{} }
+}
+reloadData();
 
 function toast(msg, icon = 'check_circle') {
   const t = document.createElement('div');
@@ -209,12 +220,18 @@ const empty = t => `<p class="text-xs text-outline">${t}</p>`;
 
 // ---------- compute + render ----------
 function render() {
+  reloadData();
+  const profileName = String(settings.name || settings.fullName || settings.full_name || 'Your account');
+  $('#profile-name').textContent = profileName;
+  $('#profile-initials').textContent = profileName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('') || 'U';
   const act = subs.filter(s => !s.trial), trials = subs.filter(s => s.trial);
   const total = sum(act.map(share)), gross = sum(act.map(s => s.cost)), saved = gross - total;
   const unpaid = []; let paidAmt = 0, paidN = 0;
   subs.forEach(s => Object.entries(s.members).forEach(([m, p]) => p ? (paidN++, paidAmt += share(s)) : unpaid.push({s, m, amt: share(s)})));
   const owed = sum(unpaid.map(u => u.amt));
-  const ending = trials.filter(s => inDays(parse(s.date)) <= 7), trialCost = sum(trials.map(share));
+  const trialWindow = Math.max(0, Number(settings.trialDays ?? 7));
+  const ending = settings.trialAlerts === false ? [] : trials.filter(s => inDays(parse(s.trialEndDate || s.date)) <= trialWindow), trialCost = sum(trials.map(share));
+  const alertUnpaid = settings.unpaidAlerts === false ? [] : unpaid;
 
   // KPIs
   $('#k-year').textContent = money(total * 12);
@@ -224,11 +241,11 @@ function render() {
   const pct = gross ? total / gross * 100 : 100;
   $('#k-pct').textContent = `${Math.round(pct)}% of ${money(gross)}`; $('#k-pct-bar').style.width = pct + '%';
   $('#k-trial').textContent = money(trialCost);
-  $('#k-trial-sub').textContent = trials.length ? `${plural(trials.length, 'free trial')} · ${plural(ending.length, 'ending')} within 7 days` : 'No free trials running';
+  $('#k-trial-sub').textContent = trials.length ? `${plural(trials.length, 'free trial')} · ${plural(ending.length, 'ending')} within ${trialWindow} days` : 'No free trials running';
   $('#k-owed').textContent = unpaid.length ? `${money(owed)} still owed by roommates` : 'Everyone is settled up';
   $('#hdr-active').textContent = `${act.length} active`;
   $('#stamp').textContent = 'Updated ' + new Date().toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-  const alerts = ending.length + unpaid.length;
+  const alerts = ending.length + alertUnpaid.length;
   $('#bell-count').textContent = alerts; $('#bell-count').classList.toggle('hidden', !alerts); $('#bell-count').classList.toggle('flex', !!alerts);
 
   // forecast: active stays flat, trials join once their end date passes
@@ -254,7 +271,7 @@ function render() {
   // top subscriptions
   const ranked = [...act].sort((a, b) => share(b) - share(a)).slice(0, 6), mx = ranked[0] ? share(ranked[0]) : 1;
   $('#top').innerHTML = ranked.map(s => `<li class="flex items-center gap-3">
-    <div class="w-9 h-9 rounded-lg ${s.tone || 'bg-primary-container/20 text-primary'} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">${s.icon || 'loyalty'}</span></div>
+    <div class="w-9 h-9 rounded-lg ${esc((s.tone || 'bg-primary-container/20 text-primary').split(/\s+/).filter(c=>/^[a-zA-Z0-9_:/.-]+$/.test(c)).join(' '))} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">${esc(s.icon || 'loyalty').replace(/[^a-zA-Z0-9_-]/g,'')}</span></div>
     <div class="flex-1 min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold truncate">${esc(s.name)}</span><span class="font-label-numeric text-xs font-bold shrink-0">${money(share(s))}</span></div>
     <div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="bar h-full rounded-full ${(CATS[s.cat] || CATS.Software)[1]}" style="width:${share(s) / mx * 100}%"></div></div>
     <div class="text-[10px] text-outline font-label-numeric mt-0.5">${Object.keys(s.members).length ? `Split ${people(s)} ways of ${money(s.cost)}` : `Solo · ${money(s.cost)}`}</div></div></li>`).join('') || empty('Nothing to rank yet.');
@@ -268,7 +285,8 @@ function render() {
     (owers.length ? owers.map(([n, v]) => `<div class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-full bg-error-container text-on-error-container flex items-center justify-center font-bold text-xs">${esc(n.slice(0, 2).toUpperCase())}</div><span class="text-xs font-semibold">${esc(n)}</span></div><span class="font-label-numeric text-xs font-semibold text-error">Owes ${money(v)}</span></div>`).join('') : `<div class="p-2.5 rounded-lg bg-secondary-container/40 text-xs text-on-secondary-container font-medium flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">check_circle</span>Everyone is settled up</div>`);
 
   // renewals next 30 days
-  const soon = act.map(s => ({s, d: nextDate(s)})).filter(x => inDays(x.d) <= 30).sort((a, b) => a.d - b.d);
+  const renewalWindow = Math.max(0, Number(settings.dueSoonDays ?? settings.dueSoonWindow ?? 30));
+  const soon = act.map(s => ({s, d: nextDate(s)})).filter(x => inDays(x.d) >= 0 && inDays(x.d) <= renewalWindow).sort((a, b) => a.d - b.d);
   $('#ren-total').textContent = money(sum(soon.map(x => share(x.s)))) + ' due';
   $('#renewals').innerHTML = soon.map(({s, d}) => `<div class="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded bg-surface-container-low"><span class="flex items-center gap-2 min-w-0"><span class="w-1.5 h-1.5 rounded-full ${inDays(d) <= 7 ? 'bg-tertiary' : 'bg-outline'} shrink-0"></span><span class="font-medium truncate">${esc(s.name)}</span></span><span class="font-label-numeric font-semibold shrink-0">${fmtDate(d)} • ${money(share(s))}</span></div>`).join('') || empty('Nothing renews in the next 30 days.');
 
@@ -288,10 +306,18 @@ function render() {
   if (bigSub) cards.push(['trending_up', 'text-primary', `${esc(bigSub.name)} costs you most`, `${money(share(bigSub))}/mo, or ${money(share(bigSub) * 12)} a year.`]);
   if (saved > 0) cards.push(['group', 'text-secondary', 'Splitting is working', `Roommates cover ${money(saved)}/mo, so you pay ${Math.round(pct)}% of the full bills.`]);
   if (ending.length) cards.push(['warning', 'text-tertiary', `${plural(ending.length, 'trial')} ending soon`, `${ending.map(s => esc(s.name.replace(/ Trial$/, ''))).join(', ')} will add ${money(sum(ending.map(share)))}/mo if you don't cancel.`]);
-  if (unpaid.length) cards.push(['schedule', 'text-error', `${money(owed)} still unpaid`, `${plural(unpaid.length, 'share')} across ${plural(owers.length, 'roommate')} are waiting to be settled.`]);
+  if (alertUnpaid.length) cards.push(['schedule', 'text-error', `${money(sum(alertUnpaid.map(u=>u.amt)))} still unpaid`, `${plural(alertUnpaid.length, 'share')} are waiting to be settled.`]);
   const solo = act.filter(s => !Object.keys(s.members).length);
   if (solo.length) cards.push(['person', 'text-outline', `${plural(solo.length, 'solo subscription')}`, `${money(sum(solo.map(s => s.cost)))}/mo that could be split with someone.`]);
   $('#insights').innerHTML = cards.slice(0, 6).map(([ic, tc, h, p]) => `<div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm flex gap-3.5"><div class="w-9 h-9 rounded-lg bg-surface-container-low ${tc} flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl">${ic}</span></div><div><div class="text-sm font-semibold">${h}</div><p class="text-xs text-on-surface-variant mt-0.5">${p}</p></div></div>`).join('') || empty('Add a few subscriptions to see insights.');
+
+  // Optional weekly summary preference: show a concise summary notice when enabled.
+  if (settings.weeklySummary === true && !document.querySelector('[data-weekly-summary]')) {
+    const note=document.createElement('div'); note.dataset.weeklySummary='true'; note.className='rounded-lg bg-primary-container/10 text-primary px-4 py-3 text-xs';
+    note.textContent=`Weekly summary enabled: ${money(total)} monthly spend, ${money(owed)} unpaid, ${plural(ending.length,'trial')} ending within ${trialWindow} days.`;
+    const main=$('#stamp'); if(main) main.parentElement.appendChild(note);
+  } else if (settings.weeklySummary !== true) { document.querySelector('[data-weekly-summary]')?.remove(); }
+  const weekly=document.querySelector('[data-weekly-summary]'); if(weekly && settings.weeklySummary===true) weekly.textContent=`Weekly summary enabled: ${money(total)} monthly spend, ${money(owed)} unpaid, ${plural(ending.length,'trial')} ending within ${trialWindow} days.`;
 
   // nav
   const navHTML = NAV.map(([l, h]) => `<a href="${h}" data-nav="${l}" ${l === 'Analytics' ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg block transition-all ${l === 'Analytics' ? 'bg-surface-container text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}">${l}</a>`).join('');
@@ -308,7 +334,11 @@ document.addEventListener('click', e => {
   if (el.dataset.act === 'menu') { const m = $('#nav-m'); m.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !m.classList.contains('hidden')); }
   if (el.dataset.act === 'bell') toast(`${plural(render.alerts.t, 'trial')} ending soon · ${plural(render.alerts.u, 'unpaid share')}`, 'notifications');
 });
-window.addEventListener('storage', render);
+window.addEventListener('storage', event => {
+  if (!event.key || [KEY, GKEY, SETTINGS_KEY, 'SetAndForget.settings.v1', 'SetAndForget.profile'].includes(event.key)) render();
+});
+// Also refresh when the page becomes visible again after another tab was active.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 render();
 })();
 </script>

@@ -15,6 +15,7 @@ html{scroll-behavior:smooth}body{overscroll-behavior:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 tailwind.config={theme:{extend:{
 colors:{"surface":"#f8f9ff","surface-dim":"#cbdbf5","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","surface-container":"#e5eeff","surface-container-high":"#dce9ff","surface-container-highest":"#d3e4fe","on-surface":"#0b1c30","on-surface-variant":"#464555","outline":"#777587","outline-variant":"#c7c4d8","primary":"#3625cd","primary-container":"#5046e5","on-primary":"#ffffff","inverse-primary":"#c3c0ff","secondary":"#006c49","secondary-container":"#6cf8bb","on-secondary-container":"#00714d","secondary-fixed":"#6ffbbe","tertiary":"#684000","tertiary-fixed":"#ffddb8","on-tertiary-fixed-variant":"#653e00","error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a","inverse-surface":"#213145","inverse-on-surface":"#eaf1ff"},
@@ -74,7 +75,7 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
         <h1 class="font-headline-lg text-headline-lg font-bold">Group splits &amp; shared ledger</h1>
         <p class="text-body-md text-on-surface-variant max-w-2xl mt-0.5">Track recurring bills, see who owes whom, and settle up.</p>
       </div>
-      <div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm text-on-surface-variant text-body-sm self-start md:self-auto"><span class="w-2 h-2 rounded-full bg-secondary"></span><span>Saved: <span id="saved" class="font-label-numeric text-on-surface font-medium"></span></span></div>
+      <div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm text-on-surface-variant text-body-sm self-start md:self-auto"><span class="w-2 h-2 rounded-full bg-secondary"></span><span>Sync: <span id="saved" class="font-label-numeric text-on-surface font-medium"></span></span></div>
     </div>
 
     <div id="cards" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
@@ -163,8 +164,8 @@ fontSize:{"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.03em",fontW
 <script>
 (() => {
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const KEY = 'SetAndForget.groups.v1', SUBS_KEY = 'SetAndForget.v2', SETTINGS_KEY = 'SetAndForget.settings', DAY = 864e5;
-const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', roommates:['Marcus','Sarah','David'], venmo:'', zelle:'', dueSoonAlerts:true, autoClearBalances:false};
+const SETTINGS_KEY = 'SetAndForget.settings', DAY = 864e5;
+const DEFAULT_SETTINGS = {name:'Your account', paymentLink:'', currency:'USD', roommates:[], venmo:'', zelle:'', dueSoonAlerts:true, autoClearBalances:false};
 // Same read order as the Settings page: legacy keys first, SETTINGS_KEY last so it wins.
 function readAppSettings(){ let raw={}; for(const k of ['SetAndForget.settings.v1','SetAndForget.profile',SETTINGS_KEY]){ try{const v=JSON.parse(localStorage.getItem(k)||'null'); if(v&&typeof v==='object'&&!Array.isArray(v)) raw={...raw,...v};}catch{} } return {...DEFAULT_SETTINGS,...raw}; }
 // Merge only the changed keys into the stored settings object (never bakes in defaults or the placeholder name).
@@ -209,111 +210,89 @@ function ago(ts) {
   return `${fmtDate(d)} at ${tm}`;
 }
 
-// ---------- data (sample data; replace with your API) ----------
-const seed = () => { const now = Date.now(); return {active:'g1', updated:now, settings:{venmo:'', zelle:'', auto:true}, groups:[
-  {id:'g1', name:'Apt 4B Roommates', hid:'#SUB-4B-902', members:['Alex','Sarah','David','Marcus'], subs:[
-    {id:'netflix', name:'Netflix 4K Premium', icon:'movie', tone:'bg-error/10 text-error', cost:22.99, payer:'Alex', date:plus(4), m:{Alex:0, Sarah:2, David:0, Marcus:0}},
-    {id:'spotify', name:'Spotify Family Plan', icon:'music_note', tone:'bg-secondary/10 text-secondary', cost:16.99, payer:'Alex', date:plus(12), m:{Alex:0, David:0, Marcus:0}},
-    {id:'wifi', name:'Sonic Fiber Gigabit Wi-Fi', icon:'router', tone:'bg-primary/10 text-primary', cost:80, payer:'David', date:plus(7), m:{Alex:0, Sarah:0, David:0, Marcus:0}},
-    {id:'adobe', name:'Adobe Creative Cloud All Apps', icon:'palette', tone:'bg-error-container text-error', cost:54.99, payer:'Marcus', date:plus(22), m:{Alex:0, Marcus:0}},
-    {id:'google', name:'Google One Cloud 2TB', icon:'cloud', tone:'bg-surface-container-high text-primary', cost:9.99, payer:'Alex', date:plus(18), m:{Alex:0, David:0}}],
-   log:[{k:'paid', a:'Marcus', v:'settled with', b:'Alex', d:'Spotify share · Feb–Mar', amt:'+$5.66', tag:'Venmo', ts:now - DAY + 3e5},
-        {k:'swap', a:'David', v:'auto-cleared with', b:'Alex', d:'Wi-Fi offset against Google One', amt:'$15.01 net', tag:'In-app balance', ts:now - 2 * DAY},
-        {k:'ping', a:'Reminder sent', v:'to', b:'Sarah', d:'Netflix share overdue', amt:'$11.50 pending', tag:'Push & SMS', ts:now - 5 * DAY}]},
-  {id:'g2', name:'Family Plan', hid:'#SUB-FP-114', members:['Alex','Mom','Dad'], subs:[], log:[]},
-  {id:'g3', name:'Design Studio Co-op', hid:'#SUB-DS-207', members:['Alex','Priya'], subs:[], log:[]}]}; };
-let data; try { data = JSON.parse(localStorage.getItem(KEY)); } catch {}
-if (!data || !Array.isArray(data.groups)) data = seed();
-// Drop malformed dates (e.g. from an imported backup) so they never show "Invalid Date" or NaN days.
-function sanitizeData(){ for (const g of data.groups) { g.members = Array.isArray(g.members) ? g.members : []; g.subs = Array.isArray(g.subs) ? g.subs : []; g.log = Array.isArray(g.log) ? g.log : []; for (const s of g.subs) if (!okDate(s.date)) s.date = plus(30); } }
-sanitizeData();
-const SG = () => { if (!data.syncGroup || !data.groups.some(x => x.id === data.syncGroup)) data.syncGroup = data.active; return data.groups.find(x => x.id === data.syncGroup) || data.groups[0]; };
-function normalizeProfile(){
-  appSettings = readAppSettings();
-  const newMe = meFrom(appSettings), prev = data.me || 'Alex';
-  if (newMe !== prev) {
-    const sw = n => n === prev ? newMe : n;
-    for (const g of data.groups || []) {
-      g.members = [...new Set((g.members || []).map(sw))];
-      for (const s of g.subs || []) { if (s.payer === prev) s.payer = newMe; if (s.m && Object.prototype.hasOwnProperty.call(s.m, prev)) { s.m[newMe] = s.m[prev]; delete s.m[prev]; } }
-      for (const e of g.log || []) { e.a = sw(e.a); e.b = sw(e.b); }
+// ---------- data (loaded from your FastAPI + Supabase backend) ----------
+const SUPABASE_URL      = 'https://YOUR-PROJECT.supabase.co'; // same values as dashboard.html / login.html
+const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';             // anon key only, never service_role
+const API_BASE          = 'http://127.0.0.1:8000';            // your FastAPI server
+const LOGIN_PAGE = 'login.html';
+const keysConfigured = !SUPABASE_URL.includes('YOUR-PROJECT') && !SUPABASE_ANON_KEY.includes('YOUR-ANON');
+let sb = null;
+try { if (keysConfigured && window.supabase) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth: {persistSession: true, autoRefreshToken: true}}); } catch { sb = null; }
+
+let leaving = false, syncState = 'busy';
+let data = {groups: [], active: null, updated: Date.now()};
+
+function toLogin() { if (leaving) return; leaving = true; location.replace(LOGIN_PAGE + '?next=groupsplits.html'); }
+async function api(path, options = {}) {
+  const {data: sess} = await sb.auth.getSession();
+  const token = sess && sess.session && sess.session.access_token;
+  if (!token) { toLogin(); throw new Error('Not signed in'); }
+  const res = await fetch(API_BASE + path, {...options, headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, ...(options.headers || {})}});
+  if (res.status === 401) { toLogin(); throw new Error('Session expired'); }
+  let body = null; try { body = await res.json(); } catch {}
+  if (!res.ok) { const d = body && body.detail; throw new Error(typeof d === 'string' ? d : d ? JSON.stringify(d) : 'Request failed (' + res.status + ')'); }
+  return body;
+}
+function friendlyError(err) {
+  const m = String((err && err.message) || err || '');
+  if (/failed to fetch|networkerror|load failed/i.test(m)) return 'Could not reach the server at ' + API_BASE + '. Is the API running?';
+  return m || 'Unknown error';
+}
+const syncLabel = () => syncState === 'busy' ? 'Syncing…' : syncState === 'off' ? 'Offline' : ago(data.updated);
+
+// icon + colour are not stored in the database, so they are derived from the bill name
+const ICONS = [[/netflix|hulu|disney|prime video|hbo|peacock|paramount|apple tv|youtube/i, 'movie'], [/spotify|apple music|tidal|deezer|audible/i, 'music_note'], [/chatgpt|openai|claude|gemini|copilot/i, 'psychology'],
+  [/google one|icloud|dropbox|onedrive|storage/i, 'cloud'], [/adobe|creative cloud|photoshop|figma|canva/i, 'palette'], [/wifi|wi-fi|internet|broadband|fiber/i, 'router'],
+  [/electric|power/i, 'bolt'], [/water/i, 'water_drop'], [/rent/i, 'home'], [/gas/i, 'local_fire_department']];
+const BILL_TONES = ['bg-primary/10 text-primary', 'bg-secondary/10 text-secondary', 'bg-error/10 text-error', 'bg-tertiary-fixed text-on-tertiary-fixed-variant', 'bg-surface-container-high text-primary'];
+function visualFor(name) { const hit = ICONS.find(([re]) => re.test(String(name))); let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return {icon: hit ? hit[1] : 'receipt_long', tone: BILL_TONES[h % BILL_TONES.length]}; }
+
+// database rows  ->  the shape the page renders (s.m[name] = unpaid months, 0 = settled)
+function buildGroup(row, ov) {
+  const members = ov.members || [], owner = members.find(m => m.is_owner) || members[0];
+  const nameById = new Map(members.map(m => [m.id, m.display_name]));
+  const idByName = Object.fromEntries(members.map(m => [m.display_name, m.id]));
+  const byBill = {};
+  for (const sh of ov.shares || []) (byBill[sh.bill_id] = byBill[sh.bill_id] || []).push(sh);
+  const subs = (ov.bills || []).filter(b => b.is_active !== false).map(b => {
+    const m = {}, shareIds = {};
+    for (const sh of byBill[b.id] || []) {
+      const n = nameById.get(sh.member_id); if (!n) continue;
+      m[n] = (sh.member_id === b.payer_member_id || sh.is_settled) ? 0 : Math.max(1, Number(sh.periods_owed) || 1);
+      shareIds[n] = sh.id;
     }
-  }
-  data.me = newMe; ME = newMe;
-  // Payment handles come only from Settings, so no stale or demo value can leak into reminders.
-  data.settings = {...(data.settings || {}), venmo:appSettings.venmo || '', zelle:appSettings.zelle || '', dueSoonAlerts:appSettings.dueSoonAlerts !== false};
-  // The Settings roommate list is intentionally NOT merged into the active group; it only prefills "New group".
+    const date = okDate(b.next_billing_date) ? b.next_billing_date : plus(30);
+    return {id: b.id, name: String(b.title || 'Bill'), cost: Math.max(0, Number(b.total_cost) || 0), payer: nameById.get(b.payer_member_id) || (owner ? owner.display_name : ''), date, billDay: parse(date).getDate(), m, shareIds, ...visualFor(b.title)};
+  });
+  const log = (ov.activity || []).slice(0, 30).map(a => {
+    const md = a.metadata || {};
+    return {k: ['paid', 'swap', 'ping'].includes(a.event_type) ? a.event_type : 'swap', a: md.a || nameById.get(a.actor_member_id) || 'Someone', v: md.v || String(a.event_type || '').replace(/_/g, ' '), b: md.b || nameById.get(a.target_member_id) || '', d: md.d || a.description || '', amt: md.amt || (a.amount != null ? money(a.amount) : ''), tag: md.tag || a.payment_method || '', ts: a.created_at};
+  });
+  return {id: row.id, row, name: row.name, hid: '#GRP-' + String(row.id).slice(0, 6).toUpperCase(), members: members.map(m => m.display_name), idByName, me: owner ? owner.display_name : '', subs, log};
 }
-function processLocalBillingCycles(){
-  let changed = false;
-  for (const s of data.groups.flatMap(x => x.subs || [])) {
-    if (s.dashboardLinked || !s.date) continue;
-    let due = parse(s.date), guard = 0;
-    if (Number.isNaN(due.getTime())) continue;
-    if (!s.billDay) { s.billDay = due.getDate(); changed = true; }
-    while (due < today() && guard++ < 240) {
-      due = addMonth(due, s.billDay);
-      for (const name of Object.keys(s.m || {})) if (name !== s.payer) s.m[name] = (Number(s.m[name]) || 0) + 1;
-      changed = true;
-    }
-    if (guard > 0) { s.date = iso(due); changed = true; }
-  }
-  if (changed) { data.updated = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} }
+async function loadGroup(row, advance = true) {
+  if (advance) { try { await api(`/api/groups/${row.id}/advance`, {method: 'POST'}); } catch (e) { if (leaving) throw e; } } // roll overdue bills into the next cycle
+  return buildGroup(row, await api(`/api/groups/${row.id}/overview`));
 }
-function syncDashboardSubsIntoGroup(){
-  let ds; try { ds = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); } catch {}
-  if (!Array.isArray(ds)) { processLocalBillingCycles(); return; }
-  let cycleChanged = false, todayDate = today();
-  for (const d of ds) {
-    if (!d || d.trial || !okDate(d.date) || !d.members || typeof d.members !== 'object') continue;
-    let due = parse(d.date), guard = 0;
-    if (!d.billDay) { d.billDay = due.getDate(); cycleChanged = true; }
-    while (due < todayDate && guard++ < 240) {
-      due = addMonth(due, d.billDay);
-      d.unpaidMonths = d.unpaidMonths || {};
-      for (const name of Object.keys(d.members)) {
-        d.unpaidMonths[name] = d.members[name] ? 1 : (Number(d.unpaidMonths[name]) || 0) + 1;
-        d.members[name] = false;
-      }
-      cycleChanged = true;
-    }
-    if (guard > 0) { d.date = iso(due); cycleChanged = true; }
-  }
-  if (cycleChanged) try { localStorage.setItem(SUBS_KEY, JSON.stringify(ds)); } catch {}
-  const g = SG(); if (!g) return;
-  // Remove linked group bills whose dashboard subscription no longer exists.
-  const liveIds = new Set(ds.filter(x => x && typeof x === 'object').map(x => String(x.id)));
-  for (const grp of data.groups) grp.subs = (grp.subs || []).filter(s => !s.dashboardLinked || liveIds.has(String(s.id)));
-  const known = new Map((g.subs || []).map(s => [String(s.id), s]));
-  for (const d of ds) {
-    if (!d || typeof d !== 'object' || d.trial || !okDate(d.date) || !d.members || !Object.keys(d.members).length) continue;
-    const old = known.get(String(d.id));
-    const m = {[ME]: 0};
-    for (const [name, paid] of Object.entries(d.members)) m[name] = paid ? 0 : Math.max(1, Number(d.unpaidMonths?.[name]) || 1);
-    const mapped = {id:String(d.id), name:String(d.name || 'Subscription'), icon:String(d.icon || 'receipt_long'), tone:String(d.tone || 'bg-surface-container-high text-primary'), cost:Math.max(0,Number(d.cost)||0), payer:ME, date:String(d.date), billDay:d.billDay || parse(d.date).getDate(), m, dashboardLinked:true};
-    if (old) { if (old.dashboardLinked) Object.assign(old, mapped); } else { g.subs.push(mapped); }
-    for (const name of Object.keys(m)) if (!g.members.includes(name)) g.members.push(name);
-  }
-  processLocalBillingCycles();
+async function loadAll() {
+  const rows = await api('/api/groups');
+  data.groups = await Promise.all(rows.slice().reverse().map(r => loadGroup(r, true)));
+  if (!data.groups.some(x => x.id === data.active)) data.active = data.groups.length ? data.groups[0].id : null;
+  data.updated = Date.now();
 }
-function syncGroupSubsToDashboard(){
-  let ds; try { ds = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); } catch {}
-  if (!Array.isArray(ds)) return;
-  const g = SG(); if (!g) return;
-  const byId = new Map((g.subs || []).map(s => [String(s.id), s]));
-  let changed = false;
-  for (const d of ds) {
-    const s = byId.get(String(d.id)); if (!s || !s.dashboardLinked || !d.members || typeof d.members !== 'object') continue;
-    for (const name of Object.keys(d.members)) { const paid = name === s.payer || Number(s.m[name] || 0) === 0; if (d.members[name] !== paid) { d.members[name] = paid; changed = true; } }
-    d.unpaidMonths = d.unpaidMonths || {};
-    for (const name of Object.keys(d.members)) { const mo = Number(s.m[name] || 0); if (mo > 0) { if (d.unpaidMonths[name] !== mo) { d.unpaidMonths[name] = mo; changed = true; } } else if (d.unpaidMonths[name]) { d.unpaidMonths[name] = 0; changed = true; } }
-    if (d.date !== s.date) { d.date = s.date; changed = true; }
-  }
-  if (changed) try { localStorage.setItem(SUBS_KEY, JSON.stringify(ds)); } catch {}
+async function refresh(g) { const fresh = await loadGroup(g.row, false), i = data.groups.findIndex(x => x.id === g.id); if (i >= 0) data.groups[i] = fresh; data.updated = Date.now(); }
+// Runs a server write. On failure shows the error and reloads from the database so the screen never drifts from it.
+async function run(fn) {
+  syncState = 'busy'; render();
+  try { const r = await fn(); syncState = 'ok'; data.updated = Date.now(); return r; }
+  catch (err) { if (leaving) return; toast(friendlyError(err), 'error'); try { await loadAll(); syncState = 'ok'; } catch { syncState = 'off'; } }
+  finally { render(); }
 }
-normalizeProfile(); syncDashboardSubsIntoGroup();
-const save = () => { data.updated = Date.now(); syncGroupSubsToDashboard(); try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} };
-const G = () => data.groups.find(g => g.id === data.active) || data.groups[0];
+const logEvent = (g, e, x = {}) => api(`/api/groups/${g.id}/activity`, {method: 'POST', body: JSON.stringify({event_type: e.k, description: e.d, amount: x.amount ?? null, payment_method: e.tag, bill_id: x.bill || null, actor_member_id: x.actor || null, target_member_id: x.target || null, metadata: {a: e.a, v: e.v, b: e.b, d: e.d, amt: e.amt, tag: e.tag}})}).catch(() => {});
+const settleShares = ids => Promise.all(ids.filter(Boolean).map(id => api('/api/bill-shares/' + id, {method: 'PATCH', body: JSON.stringify({is_settled: true, periods_owed: 0})})));
+
+const EMPTY = () => ({id: '', row: null, name: 'No groups yet', hid: '', members: [ME], idByName: {}, me: ME, subs: [], log: []});
+const G = () => { const g = data.groups.find(x => x.id === data.active) || data.groups[0] || EMPTY(); if (g.me) ME = g.me; return g; };
 const share = s => s.cost / Object.keys(s.m).length;
 const owingOf = s => Object.entries(s.m).filter(([n, v]) => n !== s.payer && v > 0);
 const debts = g => g.subs.flatMap(s => owingOf(s).map(([from, mo]) => ({s, from, to: s.payer, amt: share(s) * mo})));
@@ -325,7 +304,6 @@ function simplify(bal) {
   while (i < c.length && j < d.length) { const x = Math.min(c[i][1], d[j][1]); out.push({from:d[j][0], to:c[i][0], amt:x}); c[i][1] = r2(c[i][1] - x); d[j][1] = r2(d[j][1] - x); if (!c[i][1]) i++; if (!d[j][1]) j++; }
   return out;
 }
-const log = (g, e) => { g.log.unshift({...e, ts: Date.now()}); g.log.length = Math.min(g.log.length, 30); };
 
 let tab = 'all', q = '', showAll = false, bill = new Set(), lastFocus = null;
 
@@ -381,7 +359,7 @@ function render() {
   // header / titles
   $('#cycle').textContent = `Recurring cycle: ${now.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
   $('#hid').textContent = `Group ID: ${g.hid}`;
-  $('#saved').textContent = ago(data.updated);
+  $('#saved').textContent = syncLabel();
   $('#hdr-bills').textContent = plural(subs.length, 'shared bill');
   $('#mcount').textContent = plural(mem.length, 'member');
   $('#btn-settle-all').disabled = !dl.length;
@@ -456,7 +434,7 @@ function render() {
     ${simple.length > 1 ? `<ul class="text-[11px] text-on-surface-variant space-y-1 bg-surface-container-lowest/80 p-2 rounded">${simple.slice(1, 4).map(x => `<li>${esc(x.from)} pays ${esc(x.to)} ${money(x.amt)}</li>`).join('')}</ul>` : ''}` : `<p class="text-[11px] text-outline text-center bg-surface-container-lowest/80 p-2 rounded">Everyone is square. Nothing to transfer.</p>`}</div>`;
 
   // config
-  const st = {...data.settings, ...appSettings, dueSoonAlerts:appSettings.dueSoonAlerts !== false};
+  const st = {...appSettings, dueSoonAlerts:appSettings.dueSoonAlerts !== false};
   $('#config').innerHTML = `<h2 class="font-headline-sm text-headline-sm font-bold">Payment settings</h2><div class="flex flex-col gap-2 text-body-sm">
     <button type="button" data-act="edit" data-f="venmo" class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-left"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-primary">account_circle</span><span class="font-medium">Your Venmo handle</span></span><span class="font-label-numeric text-xs font-semibold text-primary truncate">${esc(st.venmo || 'Not set')}</span></button>
     <button type="button" data-act="edit" data-f="zelle" class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-left"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-secondary">verified_user</span><span class="font-medium">Zelle email</span></span><span class="font-label-numeric text-xs font-semibold text-secondary truncate">${esc(st.zelle || 'Not set')}</span></button>
@@ -470,6 +448,7 @@ function closeDlg() { let was = false; $$('.dlg').forEach(d => { if (!d.inert) {
 function billCalc() { const v = parseFloat($('#b-cost').value) || 0, n = bill.size; $('#b-calc').textContent = n ? `${n} ${n === 1 ? 'person' : 'people'}: ${money(v / n)} each` : 'Pick at least one person'; }
 function billChips() { $('#b-chips').innerHTML = G().members.map(m => `<button type="button" data-act="chip" data-m="${esc(m)}" aria-pressed="${bill.has(m)}" class="px-2.5 py-1 rounded-full text-xs font-medium ${bill.has(m) ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container'}">${bill.has(m) ? '✓' : '+'} ${esc(m)}</button>`).join(''); billCalc(); }
 function openBill() {
+  if (!data.groups.length) return toast('Create a group first.', 'error');
   const g = G(); $('#form-bill').reset(); bill = new Set(g.members);
   $('#b-payer').innerHTML = g.members.map(m => `<option value="${esc(m)}">${esc(m)}${m === ME ? ' (you)' : ''}</option>`).join('');
   $('#b-date').value = plus(30); $('#b-date').min = plus(0); const sym=({USD:'$',INR:'₹',EUR:'€',GBP:'£',CAD:'CA$',AUD:'A$',JPY:'¥'})[currencyCode()]||currencyCode()+' '; $('#b-currency').textContent=sym+'/mo'; billChips(); openDlg('#dlg-bill');
@@ -479,17 +458,25 @@ $('#form-bill').addEventListener('submit', e => {
   if (!name || !(cost > 0)) return; if (!bill.size) return toast('Pick at least one person to split with.', 'error');
   const payer = $('#b-payer').value, date = $('#b-date').value;
   if (!okDate(date)) return toast('Pick a valid billing date.', 'error');
+  const people = [...bill].filter(n => g.idByName[n]), per = r2(cost / people.length);
   // Like the dashboard, everyone except the payer starts as unpaid (1 month owed).
-  g.subs.push({id: Date.now().toString(36), name, cost, payer, date, billDay: parse(date).getDate(), m: Object.fromEntries([...bill].map(n => [n, n === payer ? 0 : 1]))});
-  save(); closeDlg(); tab = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = ''); render(); toast(`Added "${name}"`);
+  const body = {title: name, total_cost: r2(cost), currency: currencyCode(), billing_cycle: 'monthly', payer_member_id: g.idByName[payer] || null, next_billing_date: date,
+    shares: people.map(n => ({member_id: g.idByName[n], share_amount: per, periods_owed: n === payer ? 0 : 1, is_settled: n === payer}))};
+  closeDlg(); tab = 'all'; q = ''; $$('[data-search]').forEach(i => i.value = '');
+  run(async () => { await api(`/api/groups/${g.id}/bills`, {method: 'POST', body: JSON.stringify(body)}); await refresh(g); toast(`Added "${name}"`); });
 });
 $('#b-cost').addEventListener('input', billCalc);
 $('#form-group').addEventListener('submit', e => {
-  e.preventDefault(); const name = $('#g-name').value.trim();
-  const others = [...new Set($('#g-members').value.split(',').map(x => x.trim()).filter(x => x && x.toLowerCase() !== ME.toLowerCase()))].slice(0, 7);
+  e.preventDefault(); const name = $('#g-name').value.trim(), owner = meFrom(appSettings);
+  const others = [...new Set($('#g-members').value.split(',').map(x => x.trim()).filter(x => x && x.toLowerCase() !== owner.toLowerCase()))].slice(0, 7);
   if (!name || !others.length) return toast('Add a name and at least one other member.', 'error');
-  const g = {id: 'g' + Date.now().toString(36), name, hid: '#SUB-' + Math.random().toString(36).slice(2, 6).toUpperCase(), members: [ME, ...others], subs: [], log: []};
-  data.groups.push(g); data.active = g.id; save(); closeDlg(); $('#form-group').reset(); render(); toast(`Created "${name}"`);
+  closeDlg(); $('#form-group').reset();
+  run(async () => {
+    const created = await api('/api/groups', {method: 'POST', body: JSON.stringify({name, owner_name: owner, currency: currencyCode()})});
+    await Promise.all(others.map(n => api(`/api/groups/${created.id}/members`, {method: 'POST', body: JSON.stringify({display_name: n})})));
+    const fresh = await loadGroup(created, false); data.groups.push(fresh); data.active = fresh.id; tab = 'all'; q = ''; showAll = false;
+    toast(`Created "${name}"`);
+  });
 });
 
 // ---------- actions ----------
@@ -500,30 +487,38 @@ document.addEventListener('click', e => {
   if (act === 'menu' || act === 'bell') e.preventDefault();
   switch (act) {
     case 'open-bill': openBill(); break;
-    case 'open-group': { $('#form-group').reset(); const pre = (Array.isArray(appSettings.roommates) ? appSettings.roommates : []).filter(n => typeof n === 'string' && n.trim() && n.trim().toLowerCase() !== ME.toLowerCase()).map(n => n.trim()); $('#g-members').value = pre.join(', '); openDlg('#dlg-group'); break; }
+    case 'open-group': { $('#form-group').reset(); const pre = (Array.isArray(appSettings.roommates) ? appSettings.roommates : []).filter(n => typeof n === 'string' && n.trim() && n.trim().toLowerCase() !== meFrom(appSettings).toLowerCase()).map(n => n.trim()); $('#g-members').value = pre.join(', '); openDlg('#dlg-group'); break; }
     case 'close': closeDlg(); break;
     case 'menu': { const n = $('#nav-m'); n.classList.toggle('hidden'); $('#btn-menu').setAttribute('aria-expanded', !n.classList.contains('hidden')); break; }
     case 'bell': toast(dl.length ? `${plural(dl.length, 'unsettled share')} in ${g.name}` : 'Everything is settled up', 'notifications'); break;
-    case 'group': data.active = id; tab = 'all'; q = ''; showAll = false; $$('[data-search]').forEach(i => i.value = ''); save(); render(); break;
+    case 'group': data.active = id; tab = 'all'; q = ''; showAll = false; $$('[data-search]').forEach(i => i.value = ''); render(); break;
     case 'tab': tab = el.dataset.tab; render(); break;
     case 'toggle-log': showAll = !showAll; render(); break;
     case 'chip': bill.has(m) ? bill.delete(m) : bill.add(m); billChips(); break;
-    case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) {
-      g.subs = g.subs.filter(x => x !== s);
-      // Also delete it from the dashboard list, otherwise the next sync re-adds it.
-      try { const ds = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); if (Array.isArray(ds)) { const kept = ds.filter(x => !x || String(x.id) !== String(s.id)); if (kept.length !== ds.length) localStorage.setItem(SUBS_KEY, JSON.stringify(kept)); } } catch {}
-      save(); render(); toast(`Removed "${s.name}"`, 'delete'); } break;
-    case 'ping': if (s) { const o = owingOf(s); copy(`Hi ${o.map(x => x[0]).join(' & ')}, your ${money(share(s))} share for ${s.name} is due.${payLine() ? ' ' + payLine() : ''}`, 'Reminder copied. Paste it in your group chat.'); log(g, {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'}); save(); render(); } break;
+    case 'remove': if (s && confirm(`Remove "${s.name}" from ${g.name}?`)) run(async () => { await api('/api/bills/' + s.id, {method: 'DELETE'}); await refresh(g); toast(`Removed "${s.name}"`, 'delete'); }); break;
+    case 'ping': if (s) {
+      const o = owingOf(s), names = o.map(x => x[0]).join(' & ');
+      copy(`Hi ${names}, your ${money(share(s))} share for ${s.name} is due.${payLine() ? ' ' + payLine() : ''}`, 'Reminder copied. Paste it in your group chat.');
+      const entry = {k:'ping', a:'Reminder copied', v:'for', b:o.map(x => x[0]).join(', '), d:s.name, amt:money(sum(o.map(x => share(s) * x[1]))) + ' pending', tag:'Clipboard'};
+      run(async () => { await logEvent(g, entry, {bill: s.id}); await refresh(g); });
+    } break;
     case 'remind': { const mine = dl.filter(x => x.to === ME); if (mine.length) copy('SetAndForget reminder:\n' + mine.map(x => `${x.from} owes ${money(x.amt)} for ${x.s.name}`).join('\n') + (payLine() ? `\n${payLine()}` : ''), 'Reminder copied. Paste it in your group chat.'); break; }
     case 'nudge': { const mine = dl.filter(x => x.from === m && x.to === ME); copy(`Hey ${m}, you owe ${money(sum(mine.map(x => x.amt)))} (${mine.map(x => x.s.name).join(', ')}).${payLine() ? ' ' + payLine() : ''}`, `Payment request for ${m} copied`); break; }
     case 'mark': {
       let from = m, to = ME, hit = dl.filter(x => x.from === m && x.to === ME);
       if (!hit.length) { hit = dl.filter(x => x.from === ME && x.to === m); from = ME; to = m; }
-      const total = sum(hit.map(x => x.amt)); hit.forEach(x => { x.s.m[from] = 0; });
-      log(g, {k:'paid', a:from, v:'settled with', b:to, d:[...new Set(hit.map(x => x.s.name))].join(', '), amt:(from === m ? '+' : '-') + money(total), tag:'Manual'});
-      save(); render(); toast(`Marked ${money(total)} as paid`); break; }
-    case 'settle-all': if (dl.length && confirm(`Mark all ${plural(dl.length, 'unsettled share')} (${money(sum(dl.map(x => x.amt)))}) as paid?`)) { const t = sum(dl.map(x => x.amt)); dl.forEach(x => { x.s.m[x.from] = 0; }); log(g, {k:'swap', a:'Everyone', v:'settled up in', b:g.name, d:'All outstanding shares', amt:money(t), tag:'Settle all'}); save(); render(); toast('All balances settled'); } break;
-    case 'edit': { const f = el.dataset.f, v = prompt(f === 'venmo' ? 'Your Venmo handle' : 'Your Zelle email', appSettings[f] || data.settings[f] || ''); if (v !== null) { appSettings[f] = v.trim().slice(0, 100); data.settings[f] = appSettings[f]; patchSettings({[f]:appSettings[f]}); save(); render(); } break; }
+      if (!hit.length) break;
+      const total = sum(hit.map(x => x.amt));
+      const entry = {k:'paid', a:from, v:'settled with', b:to, d:[...new Set(hit.map(x => x.s.name))].join(', '), amt:(from === m ? '+' : '-') + money(total), tag:'Manual'};
+      run(async () => { await settleShares(hit.map(x => x.s.shareIds[from])); await logEvent(g, entry, {actor: g.idByName[from], target: g.idByName[to], amount: r2(total)}); await refresh(g); toast(`Marked ${money(total)} as paid`); });
+      break; }
+    case 'settle-all': if (dl.length && confirm(`Mark all ${plural(dl.length, 'unsettled share')} (${money(sum(dl.map(x => x.amt)))}) as paid?`)) {
+      const t = sum(dl.map(x => x.amt)), entry = {k:'swap', a:'Everyone', v:'settled up in', b:g.name, d:'All outstanding shares', amt:money(t), tag:'Settle all'};
+      run(async () => { await settleShares(dl.map(x => x.s.shareIds[x.from])); await logEvent(g, entry, {amount: r2(t)}); await refresh(g); toast('All balances settled'); });
+    } break;
+    case 'edit': { const f = el.dataset.f, v = prompt(f === 'venmo' ? 'Your Venmo handle' : 'Your Zelle email', appSettings[f] || ''); if (v !== null) {
+      const val = v.trim().slice(0, 100), col = f === 'venmo' ? 'venmo_handle' : 'zelle_email';
+      run(async () => { await api('/api/settings', {method: 'PATCH', body: JSON.stringify({[col]: val || null})}); appSettings[f] = val; patchSettings({[f]: val}); }); } break; }
     case 'export': {
       const rows = [['Bill', 'Total', 'Paid by', 'Member', 'Share', 'Months unpaid']];
       g.subs.forEach(x => Object.entries(x.m).forEach(([n, mo]) => rows.push([x.name, x.cost.toFixed(2), x.payer, n, share(x).toFixed(2), n === x.payer ? 0 : mo])));
@@ -532,7 +527,7 @@ document.addEventListener('click', e => {
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Ledger downloaded', 'download'); break; }
   }
 });
-document.addEventListener('change', e => { if (e.target.id === 'auto') { appSettings.dueSoonAlerts = e.target.checked; data.settings.dueSoonAlerts = e.target.checked; patchSettings({dueSoonAlerts:e.target.checked}); save(); } });
+document.addEventListener('change', e => { if (e.target.id === 'auto') { const on = e.target.checked; run(async () => { await api('/api/settings', {method: 'PATCH', body: JSON.stringify({due_soon_alerts: on})}); appSettings.dueSoonAlerts = on; patchSettings({dueSoonAlerts: on}); }); } });
 $$('[data-search]').forEach(inp => inp.addEventListener('input', () => { q = inp.value; $$('[data-search]').forEach(o => o.value = q); render(); }));
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeDlg();
@@ -540,21 +535,28 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- init ----------
-render();
-function reloadAll() {
-  appSettings = readAppSettings();
-  try { const fresh = JSON.parse(localStorage.getItem(KEY) || 'null'); if (fresh && Array.isArray(fresh.groups)) data = fresh; } catch {}
-  sanitizeData(); normalizeProfile(); syncDashboardSubsIntoGroup(); render();
+async function init() {
+  render();
+  if (!sb) { syncState = 'off'; render(); toast(keysConfigured ? 'Could not load Supabase.' : 'Add your Supabase keys at the top of groupsplits.html to connect to your account.', 'error'); return; }
+  const {data: sess} = await sb.auth.getSession();
+  if (!sess || !sess.session) { toLogin(); return; }
+  const userId = sess.session.user.id;
+  try {
+    const [st, prof, roommates] = await Promise.all([api('/api/settings'), sb.from('profiles').select('full_name').eq('id', userId).maybeSingle(), api('/api/roommates')]);
+    appSettings = {...appSettings, name: (prof && prof.data && prof.data.full_name) || '', venmo: st.venmo_handle || '', zelle: st.zelle_email || '', paymentLink: st.payment_link || '', currency: st.currency || 'USD',
+      dueSoonAlerts: st.due_soon_alerts !== false, dueSoonDays: st.unpaid_warning_days ?? 2, roommates: roommates.map(r => r.name).reverse()};
+    ME = meFrom(appSettings);
+    await loadAll(); syncState = 'ok';
+  } catch (err) { if (leaving) return; syncState = 'off'; toast(friendlyError(err), 'error'); }
+  render();
+  if (appSettings.dueSoonAlerts !== false) {
+    const g = G(), soon = g.subs.find(s => owingOf(s).length && inDays(parse(s.date)) <= Math.max(0, Number(appSettings.dueSoonDays ?? 2)) && inDays(parse(s.date)) >= 0);
+    if (soon) toast(`${soon.name} bills ${when(inDays(parse(soon.date)))} with ${plural(owingOf(soon).length, 'unpaid share')}`, 'schedule');
+  }
 }
-window.addEventListener('storage', event => {
-  if (!event.key || [SUBS_KEY, SETTINGS_KEY, 'SetAndForget.settings.v1', 'SetAndForget.profile', KEY].includes(event.key)) reloadAll();
-});
 // Refresh when returning via the browser Back/Forward cache.
-window.addEventListener('pageshow', event => { if (event.persisted) reloadAll(); });
-if (appSettings.dueSoonAlerts !== false) {
-  const g = G(), soon = g.subs.find(s => owingOf(s).length && inDays(parse(s.date)) <= Math.max(0, Number(appSettings.dueSoonDays ?? appSettings.unpaidDays ?? 2)) && inDays(parse(s.date)) >= 0);
-  if (soon) toast(`${soon.name} bills ${when(inDays(parse(soon.date)))} with ${plural(owingOf(soon).length, 'unpaid share')}`, 'schedule');
-}
+window.addEventListener('pageshow', event => { if (event.persisted && sb && !leaving) run(loadAll); });
+init();
 })();
 </script>
 </body>

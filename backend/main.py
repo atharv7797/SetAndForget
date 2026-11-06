@@ -1,4 +1,5 @@
 import os
+import calendar
 from datetime import date
 from typing import Optional
 
@@ -632,15 +633,54 @@ def add_group_bill(
         if not member or not member.data:
             raise HTTPException(status_code=400, detail="Invalid payer member")
 
+    # Optional: create the shares together with the bill.
+    shares_in = payload.get("shares") or []
+
+    if shares_in:
+        members_res = (
+            db.table("group_members")
+            .select("id")
+            .eq("group_id", group_id)
+            .eq("owner_id", user.id)
+            .execute()
+        )
+        valid_ids = {m["id"] for m in (members_res.data or [])}
+
+        for sh in shares_in:
+            if sh.get("member_id") not in valid_ids or sh.get("share_amount") is None:
+                raise HTTPException(status_code=400, detail="Invalid bill share")
+
     data["group_id"] = group_id
     data["owner_id"] = user.id
 
     try:
         result = db.table("group_bills").insert(data).execute()
-        return result.data[0]
-
+        bill = result.data[0]
     except Exception as error:
         handle_db_error(error)
+
+    if shares_in:
+        rows = [
+            {
+                "bill_id": bill["id"],
+                "group_id": group_id,
+                "owner_id": user.id,
+                "member_id": sh["member_id"],
+                "share_amount": sh["share_amount"],
+                "periods_owed": int(sh.get("periods_owed", 1)),
+                "is_settled": bool(sh.get("is_settled", False)),
+            }
+            for sh in shares_in
+        ]
+
+        try:
+            db.table("group_bill_shares").insert(rows).execute()
+        except Exception as error:
+            # Roll back so we never leave a bill without its shares.
+            db.table("group_bills").delete().eq("id", bill["id"]).eq("owner_id", user.id).execute()
+            handle_db_error(error)
+
+    return bill
 
 
 # --------------------------------------------------
@@ -789,7 +829,10 @@ def add_group_activity(
         "description": payload.get("description"),
         "amount": payload.get("amount"),
         "payment_method": payload.get("payment_method"),
-        "metadata": payload.get("metadata", {})
+        "metadata": payload.get("metadata", {}),
+        "bill_id": payload.get("bill_id"),
+        "actor_member_id": payload.get("actor_member_id"),
+        "target_member_id": payload.get("target_member_id")
     }
 
     try:
@@ -798,6 +841,148 @@ def add_group_activity(
 
     except Exception as error:
         handle_db_error(error)
+
+
+# --------------------------------------------------
+# GROUP EXTRAS (used by groupsplits.html)
+# --------------------------------------------------
+
+def add_months(d: date, months: int) -> date:
+    """Add calendar months, clamping to the last day of the target month."""
+    index = d.month - 1 + months
+    year = d.year + index // 12
+    month = index % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+@app.get("/api/groups/{group_id}/overview")
+def get_group_overview(group_id: str, auth=Depends(get_db)):
+    """Everything the Group Splits page needs for one group, in a single call."""
+    db, user = auth
+
+    get_owned_row(db, "groups", group_id, user.id)
+
+    def fetch(table, order_desc=False, limit=None):
+        query = (
+            db.table(table)
+            .select("*")
+            .eq("group_id", group_id)
+            .eq("owner_id", user.id)
+        )
+        if order_desc:
+            query = query.order("created_at", desc=True)
+        if limit:
+            query = query.limit(limit)
+        return query.execute().data or []
+
+    return {
+        "members": fetch("group_members"),
+        "bills": fetch("group_bills", order_desc=True),
+        "shares": fetch("group_bill_shares"),
+        "activity": fetch("group_activity", order_desc=True, limit=50),
+    }
+
+
+@app.post("/api/groups/{group_id}/advance")
+def advance_group_bills(group_id: str, auth=Depends(get_db)):
+    """
+    Roll every overdue monthly/yearly bill forward to its next due date and add
+    one unpaid period for each non-paying member per cycle that passed.
+    The date update is conditional on the old date, so two browser tabs
+    calling this at once cannot double-count a cycle.
+    """
+    db, user = auth
+
+    get_owned_row(db, "groups", group_id, user.id)
+
+    bills = (
+        db.table("group_bills")
+        .select("*")
+        .eq("group_id", group_id)
+        .eq("owner_id", user.id)
+        .eq("is_active", True)
+        .execute()
+    ).data or []
+
+    today = date.today()
+    advanced = 0
+
+    for bill in bills:
+        cycle = bill.get("billing_cycle")
+        due_raw = bill.get("next_billing_date")
+
+        if cycle not in ("monthly", "yearly") or not due_raw:
+            continue
+
+        due = date.fromisoformat(due_raw)
+        step = 1 if cycle == "monthly" else 12
+        cycles = 0
+
+        while due < today and cycles < 240:
+            due = add_months(due, step)
+            cycles += 1
+
+        if not cycles:
+            continue
+
+        updated = (
+            db.table("group_bills")
+            .update({"next_billing_date": due.isoformat()})
+            .eq("id", bill["id"])
+            .eq("owner_id", user.id)
+            .eq("next_billing_date", due_raw)
+            .execute()
+        )
+
+        if not updated.data:
+            continue  # another session already advanced this bill
+
+        shares = (
+            db.table("group_bill_shares")
+            .select("*")
+            .eq("bill_id", bill["id"])
+            .eq("owner_id", user.id)
+            .execute()
+        ).data or []
+
+        for share in shares:
+            if share["member_id"] == bill.get("payer_member_id"):
+                continue
+
+            db.table("group_bill_shares").update({
+                "periods_owed": (share.get("periods_owed") or 0) + cycles,
+                "is_settled": False
+            }).eq("id", share["id"]).eq("owner_id", user.id).execute()
+
+        advanced += 1
+
+    return {"advanced": advanced}
+
+
+@app.delete("/api/bills/{bill_id}")
+def delete_group_bill(bill_id: str, auth=Depends(get_db)):
+    db, user = auth
+
+    get_owned_row(db, "group_bills", bill_id, user.id)
+
+    db.table("group_bill_shares").delete() \
+        .eq("bill_id", bill_id) \
+        .eq("owner_id", user.id) \
+        .execute()
+
+    # Keep the activity history, just detach it from the deleted bill.
+    db.table("group_activity").update({"bill_id": None}) \
+        .eq("bill_id", bill_id) \
+        .eq("owner_id", user.id) \
+        .execute()
+
+    db.table("group_bills").delete() \
+        .eq("id", bill_id) \
+        .eq("owner_id", user.id) \
+        .execute()
+
+    return {"message": "Bill deleted"}
 
 
 # --------------------------------------------------

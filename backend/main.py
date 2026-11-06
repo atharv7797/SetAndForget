@@ -336,6 +336,20 @@ def delete_roommate(roommate_id: str, auth=Depends(get_db)):
 # SUBSCRIPTION SHARES
 # --------------------------------------------------
 
+@app.get("/api/subscription-shares")
+def get_all_subscription_shares(auth=Depends(get_db)):
+    db, user = auth
+
+    result = (
+        db.table("subscription_shares")
+        .select("*, roommates(name)")
+        .eq("owner_id", user.id)
+        .execute()
+    )
+
+    return result.data
+
+
 @app.get("/api/subscriptions/{subscription_id}/shares")
 def get_subscription_shares(subscription_id: str, auth=Depends(get_db)):
     db, user = auth
@@ -379,7 +393,7 @@ def add_subscription_share(
         "roommate_id": roommate_id,
         "owner_id": user.id,
         "share_amount": share_amount,
-        "is_settled": False
+        "is_settled": bool(payload.get("is_settled", False))
     }
 
     try:
@@ -398,13 +412,35 @@ def update_subscription_share(
 ):
     db, user = auth
 
-    result = (
-        db.table("subscription_shares")
-        .update({"is_settled": bool(payload.get("is_settled"))})
-        .eq("id", share_id)
-        .eq("owner_id", user.id)
-        .execute()
-    )
+    updates = {}
+
+    if "is_settled" in payload:
+        updates["is_settled"] = bool(payload["is_settled"])
+
+    if "share_amount" in payload:
+        try:
+            amount = round(float(payload["share_amount"]), 2)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="share_amount must be a number")
+
+        if amount < 0:
+            raise HTTPException(status_code=400, detail="share_amount cannot be negative")
+
+        updates["share_amount"] = amount
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields supplied")
+
+    try:
+        result = (
+            db.table("subscription_shares")
+            .update(updates)
+            .eq("id", share_id)
+            .eq("owner_id", user.id)
+            .execute()
+        )
+    except Exception as error:
+        handle_db_error(error)
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Share not found")
